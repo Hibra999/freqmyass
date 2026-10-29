@@ -31,22 +31,34 @@ async function view(id: string) {
       <div class="job-icon">
         <UIcon
           :name="
-            job.status === 'completed'
-              ? 'mdi:check'
-              : job.status === 'failed'
-                ? 'mdi:alert-outline'
-                : 'mdi:clock-outline'
+            job.report_warnings?.length
+              ? 'mdi:alert-outline'
+              : job.status === 'completed'
+                ? 'mdi:check'
+                : job.status === 'failed'
+                  ? 'mdi:alert-outline'
+                  : 'mdi:clock-outline'
           "
         />
       </div>
       <div class="job-description">
-        <strong>{{ job.payload.strategies?.join(' + ') || 'Dataset inventory' }}</strong
+        <strong>{{
+          job.payload.strategies?.join(' + ') || job.payload.strategy || 'Dataset inventory'
+        }}</strong
         ><small>{{ job.kind }} · {{ new Date(job.created).toLocaleString('en-US') }}</small>
         <p>{{ job.message }}</p>
       </div>
       <span
         class="pill"
-        :class="job.status === 'completed' ? 'safe' : job.status === 'failed' ? 'danger' : ''"
+        :class="
+          job.report_warnings?.length
+            ? 'danger'
+            : job.status === 'completed'
+              ? 'safe'
+              : job.status === 'failed'
+                ? 'danger'
+                : ''
+        "
         >{{ job.status }}</span
       ><button class="text-button" @click="view(job.id)">Log</button
       ><button

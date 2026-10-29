@@ -188,6 +188,16 @@ function heat(value: number | undefined) {
     <template v-if="current"
       ><section class="card">
         <h2>{{ current.strategy }}</h2>
+        <p v-for="warning in current.warnings" :key="warning" class="negative">{{ warning }}</p>
+        <p>
+          Position allocation:
+          {{
+            current.stake_amount === 'unlimited'
+              ? 'Automatic / compound balance'
+              : `${current.stake_amount ?? '—'} USDT fixed`
+          }}
+          · {{ current.max_open_trades ?? '—' }} maximum open positions
+        </p>
         <p>
           {{ current.exchange }} · {{ current.market }} ·
           {{ current.processed_pairs ?? '—' }} processed /

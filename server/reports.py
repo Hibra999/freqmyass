@@ -1,7 +1,9 @@
 """QuantStats reports from Freqtrade's exported portfolio wallet."""
 import hashlib
+import html
 import json
 import os
+import re
 from pathlib import Path
 from zipfile import ZipFile
 import matplotlib
@@ -43,8 +45,9 @@ def wallet_returns(wallet, initial, start, end):
     first = first.tz_localize('UTC') if first.tzinfo is None else first.tz_convert('UTC')
     last = pd.Timestamp(end)
     last = last.tz_localize('UTC') if last.tzinfo is None else last.tz_convert('UTC')
-    days = pd.date_range(first.normalize(), last.normalize(), freq='D')
-    daily = values.resample('D').last().reindex(days).ffill().fillna(initial)
+    days = pd.date_range(first.normalize(), (last - pd.Timedelta(nanoseconds=1)).normalize(), freq='D')
+    # Midnight wallet snapshots close the preceding UTC day, including the exclusive end date.
+    daily = values.resample('D', closed='right', label='left').last().reindex(days).ffill().fillna(initial)
     baseline = pd.Series([initial], index=[days[0] - pd.Timedelta(days=1)])
     equity = pd.concat([baseline, daily])
     if (equity <= 0).any() or not np.isfinite(equity).all():
@@ -75,20 +78,23 @@ def reconcile_wallet(wallet, stats):
         return wallet
     adjustment = 0.0
     for trade in stats['trades']:
-        if trade['exit_reason'] != 'force_exit' or trade['close_timestamp'] != stats['backtest_end_ts']:
+        if trade['exit_reason'] != 'force_exit':
             continue
         adjustment += trade['profit_abs']
         if stats.get('trading_mode', 'spot') == 'spot':
             coin = trade['pair'].split('/')[0]
             row = final_rows[final_rows['currency'] == coin]
-            if len(row) != 1:
-                raise ValueError('Cannot reconcile a final spot position without its wallet rate.')
+            if len(row) > 1:
+                raise ValueError('Duplicate currency in the final wallet snapshot.')
+            marked_value = trade['amount'] * float(row.iloc[0]['rate']) if len(row) else 0
             # Spot wallet values the coin before liquidation and before finalizing both fees.
-            adjustment += trade['stake_amount'] - trade['amount'] * float(row.iloc[0]['rate'])
+            # When a pair's candles end early, the native wallet omits its unpriced coin.
+            adjustment += trade['stake_amount'] - marked_value
     if not np.isclose(delta, adjustment, rtol=1e-5, atol=0.01):
         raise ValueError('Wallet discrepancy is not explained by final position liquidation and fees.')
-    final_time = pd.to_datetime(wallet['date'], utc=True).max() + pd.Timedelta(microseconds=1)
-    return pd.concat([wallet, pd.DataFrame([dict(date=final_time, rate=1, balance=stats['final_balance'])])], ignore_index=True)
+    final_time = pd.to_datetime(wallet['date'], utc=True).max()
+    before_final = wallet[pd.to_datetime(wallet['date'], utc=True) < final_time]
+    return pd.concat([before_final, pd.DataFrame([dict(date=final_time, rate=1, balance=stats['final_balance'])])], ignore_index=True)
 
 
 def generate(file, name):
@@ -114,18 +120,33 @@ def generate(file, name):
         config = json.loads(archive.read(f'{path.stem}_config.json'))
     exchange = config.get('exchange', {}).get('name', 'unknown')
     market = stats.get('trading_mode', 'spot')
+    early_exits = sorted({t['pair'] for t in stats['trades'] if t['exit_reason'] == 'force_exit'
+                         and t['close_timestamp'] < stats['backtest_end_ts'] - 300_000})
+    warnings = []
+    if early_exits:
+        warnings.append('Candle history ends early for final positions in ' + ', '.join(early_exits)
+                        + '. Freqtrade settles them at their last available candle. Native wallet valuation can omit unpriced holdings; daily risk metrics require caution.')
     btc = DATA / exchange / ('futures/BTC_USDT_USDT-5m-futures.feather' if market == 'futures' else 'BTC_USDT-5m.feather')
     if btc.exists():
         candles = pd.read_feather(btc)
         benchmark = benchmark_returns(candles, stats['backtest_start'], stats['backtest_end'], returns.index)
     html_ready = len(returns) >= 2 and bool(returns.abs().sum())
     if html_ready:
-        qs.reports.html(returns, benchmark=benchmark, output=str(output),
+        temporary = output.with_suffix('.tmp.html')
+        qs.reports.html(returns, benchmark=benchmark, output=str(temporary),
                         title=f'{name} · FreqMyAss', periods_per_year=365, download_filename=output.name)
+        allocation = 'automatic compounding' if config.get('stake_amount') == 'unlimited' else f"{config.get('stake_amount')} USDT fixed per entry"
+        context = f"{exchange} / {market} · {allocation} · {config.get('max_open_trades')} open positions · {initial} USDT initial capital."
+        note = '<aside style="padding:20px;max-width:960px;margin:auto">' + html.escape(context + ' ' + ' '.join(warnings)) + '</aside>'
+        annotated = re.sub(r'(<body\b[^>]*>)', lambda match: match[1] + note, temporary.read_text(encoding='utf-8'), count=1)
+        temporary.write_text(annotated, encoding='utf-8')
+        os.replace(temporary, output)
     monthly = returns.resample('ME').apply(lambda s: (1 + s).prod() - 1)
     years = returns.resample('YE').apply(lambda s: (1 + s).prod() - 1)
     peak = pd.concat([pd.Series([initial]), daily.reset_index(drop=True)]).cummax().iloc[1:].to_numpy()
     record = clean(dict(id=report_id, file=file, strategy=name, initial=initial, final=final,
+        stake_amount=config.get('stake_amount'), max_open_trades=config.get('max_open_trades'),
+        warnings=warnings,
         start=stats['backtest_start'], end=stats['backtest_end'], exchange=exchange, market=market,
         profit=stats['profit_total'], profit_abs=stats['profit_total_abs'],
         trades=stats['total_trades'], winrate=stats.get('winrate'),
@@ -162,10 +183,11 @@ def benchmark_returns(candles, start, end, index):
     prices = candles.set_index(pd.to_datetime(candles['date'], utc=True))['close'].sort_index()
     first, last = pd.to_datetime(start, utc=True), pd.to_datetime(end, utc=True)
     previous = prices[prices.index < first]
-    if previous.empty or prices.index.max() < last:
+    if previous.empty or prices.index.max() + pd.Timedelta(minutes=5) < last:
         return None
     # Truncate before daily resampling: a partial final day must not see later candles.
-    daily = prices[(prices.index >= first) & (prices.index <= last)].resample('D').last()
+    # A 5m candle's close is known five minutes after its opening timestamp.
+    daily = prices[(prices.index >= first) & (prices.index < last)].resample('D').last()
     daily.index = daily.index.tz_localize(None)
     daily = daily.reindex(index)
     if daily.isna().any():

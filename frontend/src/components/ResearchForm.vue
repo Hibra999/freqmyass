@@ -10,12 +10,14 @@ const selected = ref<string[]>(['NASOSv4_SMA']);
 const exchange = ref('binance');
 const capital = ref(wb.status.value?.capital || 1000);
 const positions = ref(wb.status.value?.max_open_trades || 3);
+const allocation = ref('automatic');
+const fixedStake = ref(330);
 const start = ref('');
 const end = ref('');
 const pairs = ref('');
 const kind = ref('backtesting');
 const epochs = ref(100);
-const workers = ref(2);
+const workers = ref(1);
 const loss = ref('SharpeHyperOptLossDaily');
 const spaces = ref('buy sell');
 const live = ref(false);
@@ -53,6 +55,20 @@ function select(name: string) {
     ? selected.value.filter((s) => s !== name)
     : [...selected.value, name];
 }
+async function connectProfile() {
+  await wb.action(async () => {
+    if (selected.value.length !== 1)
+      throw new Error('Select one strategy for the research engine profile.');
+    await wb.connect('research', {
+      strategies: selected.value,
+      exchange: exchange.value,
+      capital: capital.value,
+      max_open_trades: positions.value,
+      stake_amount: allocation.value === 'automatic' ? 'unlimited' : fixedStake.value,
+      pairs: pairs.value.trim() ? pairs.value.split(/[\s,]+/).filter(Boolean) : null,
+    });
+  }, 'Research engine connected with this profile. Native tools now use this exchange and market.');
+}
 async function submit() {
   await wb.action(
     async () => {
@@ -65,6 +81,7 @@ async function submit() {
         exchange: exchange.value,
         capital: capital.value,
         max_open_trades: positions.value,
+        stake_amount: allocation.value === 'automatic' ? 'unlimited' : fixedStake.value,
         timerange:
           start.value && end.value
             ? `${start.value.replaceAll('-', '')}-${end.value.replaceAll('-', '')}`
@@ -178,6 +195,35 @@ async function submit() {
       </div>
       <details class="advanced-details" :open="advanced">
         <summary>Advanced configuration</summary>
+        <button
+          v-if="advanced && !trading"
+          class="secondary-button"
+          type="button"
+          :disabled="wb.busy.value"
+          @click="connectProfile"
+        >
+          Connect research engine with this profile
+        </button>
+        <div class="form-grid">
+          <label
+            >Position allocation<select v-model="allocation">
+              <option value="automatic">Automatic · compound available balance</option>
+              <option value="fixed">Fixed USDT per entry</option>
+            </select></label
+          ><label v-if="allocation === 'fixed'"
+            >USDT per entry<input
+              v-model.number="fixedStake"
+              type="number"
+              min="0.01"
+              step="any"
+              required
+          /></label>
+        </div>
+        <p>
+          Automatic allocation can exceed a futures contract's maximum stake after strong historical
+          compounding. Fixed allocation uses the native Freqtrade setting and is recorded in each
+          report.
+        </p>
         <label
           >Specific pairs
           <span class="optional"

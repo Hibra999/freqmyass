@@ -5,6 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from server.catalog import initialize, read_json, RUNTIME
 from server.app import Research
 from server.jobs import submit
+from server.reports import summaries
 import time
 
 initialize()
@@ -21,5 +22,9 @@ while True:
     if all(item['status'] in ('completed', 'failed', 'cancelled') for item in items):
         for item in items:
             print(item['payload']['strategies'], item['status'], item['message'], flush=True)
-        sys.exit(0 if all(item['status'] == 'completed' for item in items) else 1)
+        reports = summaries()
+        verified = all(item['status'] == 'completed' and not item.get('report_warnings')
+                       and all(any(report['file'] == file and report['trades'] > 0 and report['html_ready']
+                                   for report in reports) for file in item['results']) for item in items)
+        sys.exit(0 if verified else 1)
     time.sleep(5)

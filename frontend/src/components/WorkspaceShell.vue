@@ -49,7 +49,8 @@ onBeforeUnmount(() => clearInterval(poll));
       </nav>
       <div class="sidebar-bottom">
         <span class="status-dot"></span> Powered by Freqtrade<small
-          >Engine {{ wb.status.value?.engine_version || 'connecting' }} · Conda</small
+          >{{ wb.status.value?.app_version || 'development' }} · Freqtrade
+          {{ wb.status.value?.engine_version || 'connecting' }} · Conda</small
         ><a href="https://github.com/Hibra999/freqmyass" target="_blank" rel="noreferrer"
           >Project & documentation ↗</a
         >

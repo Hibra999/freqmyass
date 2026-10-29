@@ -8,6 +8,7 @@ import subprocess
 import sys
 import threading
 import uuid
+import psutil
 
 from server.catalog import RUNTIME, ROOT, DATA, RESULTS, STRATEGIES, USER_DATA, make_config, read_json, write_json, settings
 
@@ -46,6 +47,14 @@ def list_jobs():
 def recover_jobs():
     for job in list_jobs():
         if job['status'] in ('running', 'queued', 'cancelling'):
+            owner = job.get('worker')
+            if owner:
+                try:
+                    process = psutil.Process(owner['pid'])
+                    if process.create_time() == owner['created'] and Path(process.exe()).resolve() == Path(sys.executable).resolve():
+                        continue
+                except psutil.Error:
+                    pass
             update(job['id'], status='interrupted', message='Application restarted. Review log and run again.')
 
 
@@ -64,12 +73,16 @@ def run_command(job_id, command):
         if read_json(RUNTIME / 'jobs' / f'{job_id}.json')['status'] in ('cancelled', 'cancelling'):
             raise InterruptedError('Cancelled by user.')
         if code:
-            raise RuntimeError(f'Process exited with code {code}. See the job log for details.')
+            tail = (RUNTIME / 'jobs' / f'{job_id}.log').read_text(encoding='utf-8', errors='replace')[-18000:]
+            errors = re.findall(r'ERROR - (.+)', tail)
+            detail = redact(errors[-1]) if errors else 'See the job log for details.'
+            raise RuntimeError(f'Freqtrade exited with code {code}: {detail}')
 
 
 def submit(kind, payload):
     job_id = uuid.uuid4().hex
     record = dict(id=job_id, kind=kind, payload=payload, status='queued', created=now(), updated=now(),
+                  worker=dict(pid=os.getpid(), created=psutil.Process().create_time()),
                   message='Waiting for the research worker.', results=[])
     write_json(RUNTIME / 'jobs' / f'{job_id}.json', record)
     POOL.submit(execute, job_id)
@@ -104,6 +117,7 @@ def execute(job_id):
             for index, name in enumerate(names):
                 update(job_id, message=f'{index + 1}/{len(names)} · {name}')
                 config = make_config(name, p['exchange'], p['capital'], p['max_open_trades'], p.get('pairs'))
+                config['stake_amount'] = p.get('stake_amount', 'unlimited')
                 if kind == 'lookahead-analysis':
                     # The native analysis forces market orders to avoid limit-order false positives.
                     config['entry_pricing']['price_side'] = 'other'

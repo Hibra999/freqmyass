@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 import importlib.metadata
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -70,14 +71,22 @@ class Research(BaseModel):
     exchange: Literal['binance', 'kucoin'] = 'binance'
     capital: float = Field(default=1000, gt=0, le=1e9, allow_inf_nan=False)
     max_open_trades: int = Field(default=3, ge=1, le=100)
+    stake_amount: float | Literal['unlimited'] = 'unlimited'
     timerange: str = ''
     pairs: list[str] | None = Field(default=None, max_length=1000)
     epochs: int = Field(default=100, ge=1, le=10000)
-    workers: int = Field(default=2, ge=1, le=8)
+    workers: int = Field(default=1, ge=1, le=8)
     loss: Literal['SharpeHyperOptLossDaily', 'SortinoHyperOptLossDaily', 'CalmarHyperOptLoss', 'ProfitDrawDownHyperOptLoss'] = 'SharpeHyperOptLossDaily'
     spaces: list[Literal['buy', 'sell', 'roi', 'stoploss', 'trailing', 'protection']] = ['buy', 'sell']
     freqai_model: str | None = None
     freqai_config: dict | None = None
+
+    @field_validator('stake_amount')
+    @classmethod
+    def valid_stake(cls, value):
+        if value != 'unlimited' and (not math.isfinite(value) or value <= 0):
+            raise ValueError('Fixed stake must be a positive finite USDT amount.')
+        return value
 
     @field_validator('timerange')
     @classmethod
@@ -137,7 +146,9 @@ def engine_state():
 @app.get('/workbench/status')
 def status():
     s = settings()
-    return dict(engine_version=importlib.metadata.version('freqtrade'),
+    version_file = ROOT / 'VERSION'
+    return dict(app_version=version_file.read_text(encoding='utf-8').strip() if version_file.exists() else 'development',
+                engine_version=importlib.metadata.version('freqtrade'),
                 quantstats_version=importlib.metadata.version('quantstats'), engines=engine_state(),
                 strategies=[{**item, 'installed': (STRATEGIES / f"{item['name']}.py").exists()}
                             for item in STRATEGY_INFO],
@@ -231,6 +242,7 @@ def launch_engine(mode, body):
         if (body.live != (not current['dry_run']) or body.strategies != [current['strategy']]
                 or body.exchange != current['exchange']['name']
                 or body.capital != current['dry_run_wallet'] or body.max_open_trades != current['max_open_trades']
+                or body.stake_amount != current['stake_amount']
                 or (body.pairs is not None and body.pairs != current['exchange']['pair_whitelist'])):
             raise HTTPException(409, 'This engine already runs a different profile. Close it from Settings before switching.')
         return {'started': True, 'existing': True, **engine_state()[mode]}
@@ -249,6 +261,11 @@ def launch_engine(mode, body):
     if mode == 'trading':
         db = USER_DATA / f"trades-{'live' if body.live else 'dry'}-{body.exchange}-{config['trading_mode']}.sqlite"
         config['db_url'] = f'sqlite:///{db.as_posix()}'
+    config['stake_amount'] = body.stake_amount
+    if mode == 'research':
+        # Native lookahead analysis forces market orders and requires the opposite quote side.
+        config['entry_pricing']['price_side'] = 'other'
+        config['exit_pricing']['price_side'] = 'other'
     path = RUNTIME / f'{mode}.json'
     write_json(path, config)
     log = (RUNTIME / f'{mode}.log').open('a', encoding='utf-8')

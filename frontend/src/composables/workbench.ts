@@ -11,15 +11,19 @@ export interface StrategyCard {
   branch: string;
 }
 export interface ResearchJob {
+  report_warnings?: string[];
   id: string;
   kind: string;
   status: string;
   message: string;
   created: string;
-  payload: { strategies?: string[]; exchange?: string; timerange?: string };
+  payload: { strategies?: string[]; strategy?: string; exchange?: string; timerange?: string };
   results: string[];
 }
 export interface ReportSummary {
+  warnings: string[];
+  stake_amount: number | 'unlimited';
+  max_open_trades: number;
   dataset_pairs: number;
   requested_pairs: number;
   processed_pairs: number;
@@ -59,6 +63,7 @@ export interface ReportDetail extends ReportSummary {
   }[];
 }
 export interface WorkbenchStatus {
+  app_version: string;
   credential_exchange: string;
   engine_version: string;
   quantstats_version: string;

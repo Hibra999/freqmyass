@@ -11,10 +11,19 @@ from server.reports import wallet_returns, result_path, reconcile_wallet, benchm
 def test_daily_returns_include_initial_capital_and_idle_days():
     wallet = pd.DataFrame({'date': ['2025-01-01T12:00:00Z', '2025-01-03T12:00:00Z'],
                            'rate': [1, 1], 'balance': [1100, 990]})
-    equity, returns = wallet_returns(wallet, 1000, '2025-01-01', '2025-01-03')
+    equity, returns = wallet_returns(wallet, 1000, '2025-01-01', '2025-01-03T12:00:00Z')
     assert list(equity) == [1100, 1100, 990]
     assert returns.tolist() == pytest.approx([0.1, 0, -0.1])
     assert (1 + returns).prod() - 1 == pytest.approx(-0.01)
+
+
+def test_midnight_settlement_closes_previous_month_without_an_extra_day():
+    wallet = pd.DataFrame({'date': ['2025-02-28T23:55:00Z', '2025-03-01T00:00:00Z'],
+                           'rate': [1, 1], 'balance': [1100, 1099]})
+    equity, returns = wallet_returns(wallet, 1000, '2025-02-28', '2025-03-01')
+    assert len(returns) == 1
+    assert equity.index[-1].strftime('%Y-%m-%d') == '2025-02-28'
+    assert returns.iloc[-1] == pytest.approx(0.099)
 
 
 def test_final_spot_liquidation_accounts_for_marked_coins_and_fees():
@@ -30,7 +39,7 @@ def test_final_spot_liquidation_accounts_for_marked_coins_and_fees():
 
 
 def test_benchmark_does_not_use_prices_after_backtest_end():
-    candles = pd.DataFrame({'date': ['2025-01-01T23:55:00Z', '2025-01-02T12:00:00Z', '2025-01-02T23:55:00Z'],
+    candles = pd.DataFrame({'date': ['2025-01-01T23:55:00Z', '2025-01-02T11:55:00Z', '2025-01-02T12:00:00Z'],
                             'close': [100, 110, 999]})
     returns = benchmark_returns(candles, '2025-01-02T00:00:00Z', '2025-01-02T12:00:00Z', pd.DatetimeIndex(['2025-01-02']))
     assert returns.iloc[0] == pytest.approx(0.1)
@@ -43,6 +52,14 @@ def test_final_futures_liquidation_only_adds_net_profit():
     assert reconcile_wallet(wallet, stats).iloc[-1]['balance'] == 1048.95
 
 
+def test_forced_exit_with_early_candle_end_restores_unpriced_position():
+    wallet = pd.DataFrame({'date': ['2025-01-03T12:00:00Z'], 'currency': ['USDT'], 'rate': [1], 'balance': [500]})
+    stats = dict(final_balance=1048.95, trading_mode='spot', backtest_end_ts=9,
+                 trades=[dict(exit_reason='force_exit', close_timestamp=1, profit_abs=48.95,
+                              stake_amount=500, amount=5, pair='COIN/USDT')])
+    assert reconcile_wallet(wallet, stats).iloc[-1]['balance'] == 1048.95
+
+
 def test_markets_and_dates_rejected_before_process_launch():
     with pytest.raises(ValidationError):
         Research(strategies=['NASOSv4_SMA', 'dip_catcher'])
@@ -52,6 +69,10 @@ def test_markets_and_dates_rejected_before_process_launch():
         Research(timerange='20250230-20250301')
     with pytest.raises(ValidationError):
         Research(capital=float('nan'))
+    with pytest.raises(ValidationError):
+        Research(stake_amount=-1)
+    with pytest.raises(ValidationError):
+        Research(stake_amount=float('nan'))
     with pytest.raises(ValidationError):
         Research(strategies=['../../untrusted'])
 
@@ -122,6 +143,24 @@ def test_cancelling_queued_job_never_launches_it(monkeypatch, tmp_path):
     assert jobs.cancel('test')['status'] == 'cancelled'
     jobs.execute('test')
     assert jobs.read_json(path)['status'] == 'cancelled'
+
+
+def test_restart_preserves_job_owned_by_a_living_worker(monkeypatch, tmp_path):
+    import os
+    import psutil
+    from server import jobs
+    from server.catalog import write_json
+    monkeypatch.setattr(jobs, 'RUNTIME', tmp_path)
+    path = tmp_path / 'jobs' / ('a' * 32 + '.json')
+    record = dict(id='a' * 32, status='running', created='2025-01-01',
+                  worker=dict(pid=os.getpid(), created=psutil.Process().create_time()))
+    write_json(path, record)
+    jobs.recover_jobs()
+    assert jobs.read_json(path)['status'] == 'running'
+    record['worker']['created'] = 0
+    write_json(path, record)
+    jobs.recover_jobs()
+    assert jobs.read_json(path)['status'] == 'interrupted'
 
 
 def test_local_api_requires_cookie_and_protection_header():
