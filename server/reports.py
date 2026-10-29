@@ -1,13 +1,18 @@
 """QuantStats reports from Freqtrade's exported portfolio wallet."""
 import hashlib
+import json
+import os
 from pathlib import Path
+from zipfile import ZipFile
 import matplotlib
 matplotlib.use('Agg')
 
 import numpy as np
 import pandas as pd
 
-from server.catalog import RESULTS, RUNTIME, DATA, read_json, write_json
+from server.catalog import RESULTS, RUNTIME, DATA, read_json, write_json, available_pairs
+
+SUMMARY_CACHE = {}
 
 
 def result_path(file):
@@ -15,6 +20,16 @@ def result_path(file):
     if not path.is_relative_to(RESULTS.resolve()) or path.suffix != '.zip' or not path.is_file():
         raise ValueError('Unknown backtest archive.')
     return path
+
+
+def publish_to_engine_history(path):
+    """Expose the same archive to the official explorer without copying large wallet data."""
+    if path.parent == RESULTS:
+        return
+    for original in (path, path.with_suffix('.meta.json')):
+        destination = RESULTS / original.name
+        if original.exists() and not destination.exists():
+            os.link(original, destination)
 
 
 def wallet_returns(wallet, initial, start, end):
@@ -51,6 +66,31 @@ def clean(value):
     return value
 
 
+def reconcile_wallet(wallet, stats):
+    wallet = wallet.copy()
+    final_rows = wallet[pd.to_datetime(wallet['date'], utc=True) == pd.to_datetime(wallet['date'], utc=True).max()]
+    last_value = float((final_rows['rate'] * final_rows['balance']).sum())
+    delta = stats['final_balance'] - last_value
+    if np.isclose(delta, 0, rtol=1e-5, atol=0.01):
+        return wallet
+    adjustment = 0.0
+    for trade in stats['trades']:
+        if trade['exit_reason'] != 'force_exit' or trade['close_timestamp'] != stats['backtest_end_ts']:
+            continue
+        adjustment += trade['profit_abs']
+        if stats.get('trading_mode', 'spot') == 'spot':
+            coin = trade['pair'].split('/')[0]
+            row = final_rows[final_rows['currency'] == coin]
+            if len(row) != 1:
+                raise ValueError('Cannot reconcile a final spot position without its wallet rate.')
+            # Spot wallet values the coin before liquidation and before finalizing both fees.
+            adjustment += trade['stake_amount'] - trade['amount'] * float(row.iloc[0]['rate'])
+    if not np.isclose(delta, adjustment, rtol=1e-5, atol=0.01):
+        raise ValueError('Wallet discrepancy is not explained by final position liquidation and fees.')
+    final_time = pd.to_datetime(wallet['date'], utc=True).max() + pd.Timedelta(microseconds=1)
+    return pd.concat([wallet, pd.DataFrame([dict(date=final_time, rate=1, balance=stats['final_balance'])])], ignore_index=True)
+
+
 def generate(file, name):
     from freqtrade.data.btanalysis import get_backtest_wallet_change, load_backtest_stats
     import quantstats as qs
@@ -60,17 +100,7 @@ def generate(file, name):
     if wallet is None or wallet.empty:
         raise ValueError('This archive has no wallet history. Re-run with Freqtrade 2026.8 or newer.')
     initial = stats['starting_balance']
-    # The engine records the final candle before its forced liquidation pass.
-    wallet_last = (wallet.assign(quote=wallet['rate'] * wallet['balance'])
-                   .groupby('date')['quote'].sum().sort_index().iloc[-1])
-    delta = stats['final_balance'] - wallet_last
-    if not np.isclose(delta, 0, rtol=1e-5, atol=0.01):
-        forced_pnl = sum(t['profit_abs'] for t in stats['trades']
-                         if t['exit_reason'] == 'force_exit' and t['close_timestamp'] == stats['backtest_end_ts'])
-        if not np.isclose(delta, forced_pnl, rtol=1e-5, atol=0.01):
-            raise ValueError('Wallet discrepancy is not explained by final force exits.')
-        final_time = pd.to_datetime(wallet['date'], utc=True).max() + pd.Timedelta(microseconds=1)
-        wallet = pd.concat([wallet, pd.DataFrame([dict(date=final_time, rate=1, balance=stats['final_balance'])])], ignore_index=True)
+    wallet = reconcile_wallet(wallet, stats)
     daily, returns = wallet_returns(wallet, initial, stats['backtest_start'], stats['backtest_end'])
     final = float(daily.iloc[-1])
     expected = stats['final_balance']
@@ -80,22 +110,14 @@ def generate(file, name):
     directory = RUNTIME / 'reports'
     output = directory / f'{report_id}.html'
     benchmark = None
-    # Freqtrade stats omit the exchange; our persisted run configuration is authoritative.
-    job_id = Path(file).parts[0]
-    config = read_json(RUNTIME / 'jobs' / f'{job_id}-{name}.config.json', {})
+    with ZipFile(path) as archive:
+        config = json.loads(archive.read(f'{path.stem}_config.json'))
     exchange = config.get('exchange', {}).get('name', 'unknown')
     market = stats.get('trading_mode', 'spot')
-    btc = DATA / exchange / ('futures/BTC_USDT_USDT-1d-futures.feather' if market == 'futures' else 'BTC_USDT-1d.feather')
+    btc = DATA / exchange / ('futures/BTC_USDT_USDT-5m-futures.feather' if market == 'futures' else 'BTC_USDT-5m.feather')
     if btc.exists():
         candles = pd.read_feather(btc)
-        prices = candles.set_index(pd.to_datetime(candles['date'], utc=True))['close']
-        benchmark = prices.resample('D').last().pct_change()
-        benchmark.index = benchmark.index.tz_localize(None)
-        benchmark = benchmark.reindex(returns.index)
-        if benchmark.isna().any():
-            benchmark = None
-        else:
-            benchmark.name = 'BTC buy & hold'
+        benchmark = benchmark_returns(candles, stats['backtest_start'], stats['backtest_end'], returns.index)
     html_ready = len(returns) >= 2 and bool(returns.abs().sum())
     if html_ready:
         qs.reports.html(returns, benchmark=benchmark, output=str(output),
@@ -109,17 +131,46 @@ def generate(file, name):
         trades=stats['total_trades'], winrate=stats.get('winrate'),
         drawdown=stats.get('max_drawdown_account'), sharpe=stats.get('sharpe'),
         sortino=stats.get('sortino'), profit_factor=stats.get('profit_factor'),
-        html_ready=html_ready, benchmark='BTC buy & hold' if benchmark is not None else None,
+        html_ready=html_ready, benchmark='BTC price (no fees)' if benchmark is not None else None,
         basis='Freqtrade exported wallet plus verified final forced exits, daily UTC, 365 periods per year. Wallet equity, not a separate mark-to-market reconstruction.',
         equity=[dict(date=d.strftime('%Y-%m-%d'), value=float(v), drawdown=float(v / peak[i] - 1))
                 for i, (d, v) in enumerate(daily.items())],
         monthly=[dict(year=d.year, month=d.month, value=v) for d, v in monthly.items()],
         yearly=[dict(year=d.year, value=v) for d, v in years.items()],
+        requested_pairs=len(config.get('exchange', {}).get('pair_whitelist', [])),
+        dataset_pairs=len(available_pairs(exchange, market)),
+        processed_pairs=len(stats.get('pairlist', [])),
+        skipped_pairs=sorted(set(config.get('exchange', {}).get('pair_whitelist', [])) - set(stats.get('pairlist', []))),
         trade_list=stats.get('trades', []), pair_results=stats.get('results_per_pair', [])))
     write_json(directory / f'{report_id}.json', record)
+    publish_to_engine_history(path)
     return record
 
 
 def summaries():
-    return [{k: v for k, v in read_json(path).items() if k not in ('equity', 'trade_list', 'pair_results')}
-            for path in sorted((RUNTIME / 'reports').glob('*.json'), key=lambda p: p.stat().st_mtime, reverse=True)]
+    result = []
+    for path in sorted((RUNTIME / 'reports').glob('*.json'), key=lambda p: p.stat().st_mtime, reverse=True):
+        modified = path.stat().st_mtime_ns
+        if path not in SUMMARY_CACHE or SUMMARY_CACHE[path][0] != modified:
+            SUMMARY_CACHE[path] = (modified, {k: v for k, v in read_json(path).items()
+                if k not in ('equity', 'trade_list', 'pair_results')})
+        result.append(SUMMARY_CACHE[path][1])
+    return result
+
+
+def benchmark_returns(candles, start, end, index):
+    prices = candles.set_index(pd.to_datetime(candles['date'], utc=True))['close'].sort_index()
+    first, last = pd.to_datetime(start, utc=True), pd.to_datetime(end, utc=True)
+    previous = prices[prices.index < first]
+    if previous.empty or prices.index.max() < last:
+        return None
+    # Truncate before daily resampling: a partial final day must not see later candles.
+    daily = prices[(prices.index >= first) & (prices.index <= last)].resample('D').last()
+    daily.index = daily.index.tz_localize(None)
+    daily = daily.reindex(index)
+    if daily.isna().any():
+        return None
+    values = pd.concat([pd.Series([previous.iloc[-1]], index=[index[0] - pd.Timedelta(days=1)]), daily])
+    result = values.pct_change().iloc[1:]
+    result.name = 'BTC price (no fees)'
+    return result

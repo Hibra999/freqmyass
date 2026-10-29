@@ -100,9 +100,14 @@ def execute(job_id):
         else:
             names = p['strategies']
             outputs = []
+            warnings = []
             for index, name in enumerate(names):
                 update(job_id, message=f'{index + 1}/{len(names)} · {name}')
                 config = make_config(name, p['exchange'], p['capital'], p['max_open_trades'], p.get('pairs'))
+                if kind == 'lookahead-analysis':
+                    # The native analysis forces market orders to avoid limit-order false positives.
+                    config['entry_pricing']['price_side'] = 'other'
+                    config['exit_pricing']['price_side'] = 'other'
                 if p.get('freqai_model'):
                     config['freqai'] = p['freqai_config']
                 path = RUNTIME / 'jobs' / f'{job_id}-{name}.config.json'
@@ -122,10 +127,12 @@ def execute(job_id):
                     command += ['--epochs', str(p['epochs']), '--job-workers', str(p['workers']),
                                 '--hyperopt-loss', p['loss'], '--spaces', *p['spaces'], '--disable-param-export']
                 elif kind == 'lookahead-analysis':
-                    command += ['--lookahead-analysis-exportfilename', str(RUNTIME / 'jobs' / f'{job_id}.csv')]
+                    command += ['--lookahead-analysis-exportfilename', str(RUNTIME / 'jobs' / f'{job_id}-{name}.csv')]
                 elif kind == 'recursive-analysis':
                     command += ['--startup-candle', '30', '100', '248', '500', '1000']
                 run_command(job_id, command)
+                if kind == 'lookahead-analysis' and not (RUNTIME / 'jobs' / f'{job_id}-{name}.csv').exists():
+                    raise RuntimeError('Analysis did not produce verified results. The native command can exit successfully with insufficient trades or configuration errors; inspect its log.')
                 if kind == 'backtesting':
                     from server.reports import generate
                     for result in directory.glob('*.zip'):
@@ -134,12 +141,18 @@ def execute(job_id):
                         try:
                             generate(file, name)
                         except Exception as exc:
+                            warnings.append(f'{name}: {redact(str(exc))}')
                             with (RUNTIME / 'jobs' / f'{job_id}.log').open('a', encoding='utf-8') as log:
                                 log.write(f'\nReport could not be generated: {redact(str(exc))}\n')
                     update(job_id, results=outputs)
             if kind == 'backtesting' and not outputs:
                 raise RuntimeError('Freqtrade completed but did not produce a backtest archive.')
-        update(job_id, status='completed', message='Completed.', finished=now())
+            if warnings:
+                update(job_id, report_warnings=warnings)
+        if read_json(RUNTIME / 'jobs' / f'{job_id}.json')['status'] in ('cancelled', 'cancelling'):
+            raise InterruptedError()
+        warnings = read_json(RUNTIME / 'jobs' / f'{job_id}.json').get('report_warnings', [])
+        update(job_id, status='completed', message='Engine completed. Report needs attention: ' + '; '.join(warnings) if warnings else 'Completed.', finished=now())
     except InterruptedError:
         update(job_id, status='cancelled', message='Cancelled. Partial files are kept for inspection.', finished=now())
     except Exception as exc:

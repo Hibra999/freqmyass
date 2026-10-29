@@ -1,6 +1,5 @@
 {
-  "name": "frequi",
-  "version": "0.1.0",
+  "name": "freqmyass",
   "private": true,
   "type": "module",
   "scripts": {
@@ -40,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@iconify-json/lucide": "^1.2.147",
     "@iconify-json/mdi": "^1.2.3",
     "@playwright/test": "^1.64.1",
     "@tailwindcss/vite": "^4.3.3",

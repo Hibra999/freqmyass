@@ -10,3 +10,5 @@
 - [SingleB_FixedRR](https://github.com/ly5586/backtest-autopsy/blob/master/strategy/SingleB_FixedRR.py): MIT source repository; corresponds to the requested [Freqle entry](https://freqle.org/strategy/6fae0c352e8e44fb).
 
 Strategy signals, ROI tables, stoploss, trailing configuration and startup counts are retained. The UI explicitly flags the original short warmup in dip_catcher. No unsupported author recommendations are invented.
+
+The two legacy SMA strategies are converted with Freqtrade's own `StrategyUpdater` to interface V3. This fixes duplicate signal columns during lookahead analysis. Originals remain byte-for-byte unchanged. Validation compares trade times, pairs, prices, amounts, exit reasons and final balances against the original V2 smoke runs. V3 also restores descriptive entry tags that the V2 adapter dropped.

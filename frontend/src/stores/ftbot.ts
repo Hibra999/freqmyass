@@ -219,7 +219,12 @@ export function createBotSubStore(botId: string, botName: string) {
           refreshing.value = true;
           // TODO: Should be AxiosInstance
           const updates: Promise<unknown>[] = [];
-          updates.push(getState());
+          await getState();
+          // A research server has no running trading bot or wallet RPC.
+          if (isWebserverMode.value) {
+            refreshRequired.value = false;
+            return;
+          }
           updates.push(getProfit());
           updates.push(getTrades());
           updates.push(getBalance());
@@ -238,6 +243,7 @@ export function createBotSubStore(botId: string, botName: string) {
     }
 
     async function refreshFrequent() {
+      if (!botStatusAvailable.value || isWebserverMode.value) return;
       // Refresh data that's needed in near realtime
       await getOpenTrades();
       await getLocks();

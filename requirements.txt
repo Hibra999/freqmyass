@@ -1,4 +1,6 @@
-freqtrade==2026.8
+freqtrade[hyperopt]==2026.8
+# Freqtrade imports vendored cloudpickle, which joblib 1.6 removed.
+joblib==1.5.3
 quantstats==0.0.81
 httpx==0.28.1
 pytest==9.1.1

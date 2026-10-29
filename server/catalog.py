@@ -13,11 +13,11 @@ RESULTS = USER_DATA / 'backtest_results'
 STRATEGY_INFO = [
     dict(name='NASOSv4_SMA', market='spot', exchange='binance', informative=['1h'],
          description='SMA offsets with informative trend filters.',
-         warning='Legacy V2 interface. Custom stoploss is disabled in the original.',
+         warning='Official V2-to-V3 interface migration; signals preserved. Original custom stoploss is disabled.',
          repo='remiotore/ccxt-freqtrade', branch='main', path='strategies/NASOSv4_SMA.py'),
     dict(name='NotAnotherSMAOffsetStrategyHO', market='spot', exchange='binance', informative=[],
          description='Optimized moving-average offset entries and trailing exits.',
-         warning='Original stoploss is -35%. The source repository is archived.',
+         warning='Original stoploss is -35%. EWO is sensitive to warmup (200 original candles). Official V3 migration; archived source.',
          repo='davidzr/freqtrade-strategies', branch='main', path='strategies/NotAnotherSMAOffsetStrategyHO/NotAnotherSMAOffsetStrategyHO.py'),
     dict(name='dip_catcher', market='futures', exchange='binance', informative=[],
          description='Long and short entries using Hull averages and Ichimoku.',

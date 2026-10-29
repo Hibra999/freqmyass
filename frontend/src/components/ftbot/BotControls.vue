@@ -13,7 +13,8 @@ const isRunning = computed((): boolean => {
 async function handleStopBot() {
   const result = await confirm({
     title: 'Stop Bot',
-    message: 'Stop the bot loop from running?',
+    message:
+      'Stop all processing, including exits for open trades? Use Pause entries to keep managing open positions.',
   });
   if (result) {
     botStore.activeBot.stopBot();
@@ -66,12 +67,13 @@ async function handleForceEntry() {
 </script>
 
 <template>
-  <div class="flex flex-row gap-1">
+  <div class="flex flex-row flex-wrap gap-2">
     <UButton
       size="xl"
       color="neutral"
       :disabled="!botStore.activeBot.isTrading || isRunning"
       title="Start Trading"
+      label="Start bot"
       icon="mdi:play"
       @click="botStore.activeBot.startBot()"
     />
@@ -80,6 +82,7 @@ async function handleForceEntry() {
       color="neutral"
       :disabled="!botStore.activeBot.isTrading || !isRunning"
       title="Stop Trading - Also stops handling open trades."
+      label="Stop bot"
       icon="mdi:stop"
       @click="handleStopBot()"
     />
@@ -88,6 +91,7 @@ async function handleForceEntry() {
       color="neutral"
       :disabled="!botStore.activeBot.isTrading || !isRunning"
       title="Pause (StopBuy) - Freqtrade will continue to handle open trades, but will not enter new trades or increase position sizes."
+      label="Pause entries"
       icon="mdi:pause"
       @click="handleStopBuy()"
     />
@@ -96,6 +100,7 @@ async function handleForceEntry() {
       color="neutral"
       :disabled="!botStore.activeBot.isTrading"
       title="Reload Config - reloads configuration including strategy, resetting all settings changed on the fly."
+      label="Reload settings"
       icon="mdi:reload"
       @click="handleReloadConfig()"
     />
@@ -104,6 +109,7 @@ async function handleForceEntry() {
       size="xl"
       :disabled="!botStore.activeBot.isTrading"
       title="Force exit all"
+      label="Exit all trades"
       icon="mdi:close-box-multiple"
       @click="handleForceExit()"
     />
@@ -113,6 +119,7 @@ async function handleForceEntry() {
       color="neutral"
       :disabled="!botStore.activeBot.isTrading || !isRunning"
       title="Force enter - Immediately enter a trade at an optional price. Exits are then handled according to strategy rules."
+      label="Manual entry"
       icon="mdi:plus-box-multiple-outline"
       @click="handleForceEntry"
     />

@@ -9,6 +9,7 @@ import re
 import secrets
 import subprocess
 import sys
+import threading
 from typing import Literal
 
 import httpx
@@ -23,6 +24,7 @@ from server import jobs, reports
 initialize()
 SESSION = secrets.token_urlsafe(40)
 ENGINES = {}
+ENGINE_LOCK = threading.RLock()
 
 
 @asynccontextmanager
@@ -167,6 +169,15 @@ def pairs(exchange: Literal['binance', 'kucoin'], market: Literal['spot', 'futur
     return available_pairs(exchange, market)
 
 
+@app.get('/workbench/compatibility/{exchange}/{market}')
+def compatibility(exchange: Literal['binance', 'kucoin'], market: Literal['spot', 'futures']):
+    from server.eligibility import check
+    try:
+        return check(exchange, market)
+    except Exception as exc:
+        raise HTTPException(422, jobs.redact(str(exc)))
+
+
 @app.post('/workbench/data/{action}')
 def import_data(action: Literal['import', 'scan']):
     if any(j['kind'] in ('import', 'scan') and j['status'] in ('queued', 'running') for j in jobs.list_jobs()):
@@ -209,8 +220,19 @@ def cancel_job(job_id: str):
 
 @app.post('/workbench/engines/{mode}')
 def start_engine(mode: Literal['research', 'trading'], body: Trading):
+    with ENGINE_LOCK:
+        return launch_engine(mode, body)
+
+
+def launch_engine(mode, body):
     previous = ENGINES.get(mode)
     if previous and previous['process'].poll() is None:
+        current = read_json(RUNTIME / f'{mode}.json')
+        if (body.live != (not current['dry_run']) or body.strategies != [current['strategy']]
+                or body.exchange != current['exchange']['name']
+                or body.capital != current['dry_run_wallet'] or body.max_open_trades != current['max_open_trades']
+                or (body.pairs is not None and body.pairs != current['exchange']['pair_whitelist'])):
+            raise HTTPException(409, 'This engine already runs a different profile. Close it from Settings before switching.')
         return {'started': True, 'existing': True, **engine_state()[mode]}
     if len(body.strategies) != 1:
         raise HTTPException(422, 'Select exactly one strategy for a running bot.')
@@ -225,7 +247,7 @@ def start_engine(mode: Literal['research', 'trading'], body: Trading):
     except ValueError as exc:
         raise HTTPException(422, str(exc))
     if mode == 'trading':
-        db = USER_DATA / ('trades-live.sqlite' if body.live else 'trades-dry.sqlite')
+        db = USER_DATA / f"trades-{'live' if body.live else 'dry'}-{body.exchange}-{config['trading_mode']}.sqlite"
         config['db_url'] = f'sqlite:///{db.as_posix()}'
     path = RUNTIME / f'{mode}.json'
     write_json(path, config)
@@ -268,6 +290,31 @@ def close_research():
     return {'closed': True}
 
 
+@app.post('/workbench/engines/trading/close')
+async def close_trading():
+    value = ENGINES.get('trading')
+    if not value or value['process'].poll() is not None:
+        return {'closed': True}
+    try:
+        async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{value['port']}/api/v1", timeout=15) as client:
+            auth = await client.post('/token/login', auth=('freqmyass', settings()['api_password']))
+            auth.raise_for_status()
+            headers = {'Authorization': f"Bearer {auth.json()['access_token']}"}
+            paused = await client.post('/stopbuy', headers=headers)
+            paused.raise_for_status()
+            opened = await client.get('/status', headers=headers)
+            opened.raise_for_status()
+            if opened.json():
+                raise HTTPException(409, 'Open trades still need management. Close them in the trading desk before closing the engine.')
+            response = await client.post('/stop', headers=headers)
+            response.raise_for_status()
+    except httpx.HTTPError:
+        raise HTTPException(409, 'Cannot verify open positions. Keep the engine running and inspect its log.')
+    value['process'].terminate()
+    value['process'].wait(timeout=15)
+    return {'closed': True}
+
+
 @app.post('/workbench/telegram/test')
 async def telegram_test():
     s = settings()
@@ -294,6 +341,20 @@ def report(report_id: str):
     return result
 
 
+class ReportInput(BaseModel):
+    file: str = Field(max_length=300)
+    strategy: str = Field(pattern=r'^[A-Za-z_][A-Za-z0-9_]{0,100}$')
+
+
+@app.post('/workbench/reports/create')
+def create_report(body: ReportInput):
+    try:
+        reports.result_path(body.file)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
+    return jobs.submit('report', body.model_dump())
+
+
 @app.get('/workbench/reports/{report_id}/html')
 def report_html(report_id: str, download: bool = False):
     record = report(report_id)
@@ -306,8 +367,17 @@ def report_html(report_id: str, download: bool = False):
 
 @app.get('/workbench/results')
 def results():
-    return [{'file': str(path.relative_to(RESULTS)).replace('\\', '/'), 'bytes': path.stat().st_size}
-            for path in RESULTS.rglob('*.zip')]
+    items, seen = [], set()
+    # Prefer the original directory over its hard link in native engine history.
+    for path in sorted(RESULTS.rglob('*.zip'), key=lambda p: len(p.parts), reverse=True):
+        identity = (path.stat().st_dev, path.stat().st_ino)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        metadata = read_json(path.with_suffix('.meta.json'), {})
+        items.append(dict(file=str(path.relative_to(RESULTS)).replace('\\', '/'), bytes=path.stat().st_size,
+                          strategies=list(metadata)))
+    return items
 
 
 @app.get('/workbench/results/download')

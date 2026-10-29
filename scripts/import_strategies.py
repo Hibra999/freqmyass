@@ -1,4 +1,4 @@
-"""Fetch the requested originals, record exact provenance, then apply documented import-only fixes."""
+"""Fetch pinned originals and apply the official interface compatibility migration."""
 import hashlib
 import json
 from pathlib import Path
@@ -7,6 +7,17 @@ import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from server.catalog import ROOT, STRATEGIES, STRATEGY_INFO, initialize, write_json
+
+
+def compatible_source(name, source):
+    text = source.decode('utf-8-sig')
+    if name in ('NASOSv4_SMA', 'NotAnotherSMAOffsetStrategyHO'):
+        from freqtrade.strategy.strategyupdater import StrategyUpdater
+        text = StrategyUpdater().update_code(text)
+    if name == 'dip_catcher':
+        # This import is unused; all indicators come from TA-Lib and technical.
+        text = '\n'.join(line for line in text.splitlines() if not line.startswith('import pandas_ta')) + '\n'
+    return text
 
 
 def fetch(url):
@@ -32,10 +43,7 @@ def main():
         originals = STRATEGIES.parent / 'originals'
         originals.mkdir(exist_ok=True)
         (originals / f'{name}.py').write_bytes(source)
-        text = source.decode('utf-8-sig')
-        # pandas_ta is imported but unused by dip_catcher; avoid an unnecessary dependency.
-        if name == 'dip_catcher':
-            text = '\n'.join(line for line in text.splitlines() if not line.startswith('import pandas_ta')) + '\n'
+        text = compatible_source(name, source)
         (STRATEGIES / f'{name}.py').write_text(text, encoding='utf-8')
         lock[name] = dict(url=url, revision=revision, sha256=digest)
         print(f'{name}: source verified ({revision[:12]})')

@@ -12,16 +12,18 @@ Prerequisites: Windows, Miniconda, Git, Node.js and pnpm (the version is pinned 
 4. Open **Backtesting**, choose spot or futures, strategies, capital and a period. Empty dates and pairs mean all available data for that exchange and market.
 5. Reports appear automatically after completed runs. Inspect each job log when a run or report fails.
 
+For retired markets, use **Advanced configuration → Check and select available markets** before submitting. Every excluded pair is listed. This consults Freqtrade's exchange metadata; it does not delete or fabricate historical candles. Reports distinguish selected, processed and total dataset pairs. A failed full-universe attempt remains in activity history.
+
 The configured defaults are **1,000 USDT**, **3 open positions**, automatic stake sizing and **5m candles**. NASOS also receives its required 1h informative candles. These are comparison defaults, not claims about the authors' recommended risk settings.
 
 ## What is included
 
 - A guided research workflow, persistent queue, cancellation, job logs and stored configurations.
-- The four requested strategies, fetched from pinned upstream revisions with SHA-256 verification. Originals remain alongside the locally runnable copies.
+- The four requested strategies, fetched from pinned upstream revisions with SHA-256 verification. Originals remain alongside runnable copies. The two V2 SMA strategies use Freqtrade's official V3 migration; trading rules are preserved.
 - Binance spot/futures and KuCoin spot data, with per-file start/end dates, duplicates and gap counts. KuCoin futures has no candles in the source snapshot.
 - Native Freqtrade trading controls, portfolio dashboard, charts, orders, history, balances, pairlists, data collector, lookahead analysis and recursive analysis.
 - Hyperopt jobs through the official CLI. Parameter export is disabled to avoid silently changing the original strategy settings.
-- QuantStats HTML reports, daily wallet curves, monthly and yearly compounded returns, trade tables and downloadable engine archives.
+- QuantStats HTML reports, daily wallet curves, monthly and yearly compounded returns, trade tables and downloadable engine archives. Saved native backtest archives can also be selected under Reports.
 - Native Freqtrade Telegram. Configure credentials in Settings and test the connection; commands are owned by the running Freqtrade trading process.
 - Multiple external engine connections through Settings. FreqAI requires a compatible strategy and its model dependencies; the four supplied strategies do not implement FreqAI features.
 
@@ -33,7 +35,7 @@ The application listens on loopback. Local workbench requests require an HTTP-on
 
 Trading starts in simulation and in the stopped state. Live activation requires credentials plus the explicit `ENABLE LIVE TRADING` phrase. Starting a process does not start entries; use the native Start control. Use exchange keys without withdrawal permission. One native Telegram bot token must belong to one running trading process.
 
-Reports use Freqtrade's exported wallet, sampled daily in UTC with 365 periods per year. Final forced exits are included only when their exported net PnL explains the wallet discrepancy. The final balance must match the engine. Wallet equity is not an independently reconstructed mark-to-market series. Native Freqtrade drawdown and Sharpe metrics are labeled separately from QuantStats. A BTC benchmark is used only when its history covers the reporting period.
+Reports use Freqtrade's exported wallet, sampled daily in UTC with 365 periods per year. Final forced exits are reconciled from their exported net PnL; spot reconciliation also accounts for the marked coins and fees before liquidation. The final balance must match the engine. Wallet equity is not an independently reconstructed mark-to-market series. Native Freqtrade drawdown and Sharpe metrics are labeled separately from QuantStats. The BTC price benchmark uses 5m candles truncated at the backtest end, with no assumed future prices or trading fees.
 
 Backtests depend on coverage, exchange metadata and Freqtrade's execution assumptions. Delisted or unsupported pairs can be rejected by the engine; logs must be reviewed. No missing markets are silently substituted. Backtest results do not guarantee live results.
 
@@ -42,13 +44,15 @@ Backtests depend on coverage, exchange metadata and Freqtrade's execution assump
 ```powershell
 .runtime\env\python.exe -m pytest tests -q
 .runtime\env\python.exe scripts\validate_engine.py
+.runtime\env\python.exe scripts\validate_analysis.py
 cd frontend
 pnpm typecheck
 pnpm build
 node check-workspace.mjs
+node check-engines.mjs
 ```
 
-The engine smoke test runs the four strategies against BTC, ETH and SOL from January through February 2025. The browser check needs the app running and Microsoft Edge installed. Full-universe tests are separate from smoke tests.
+The engine smoke test runs the four strategies against BTC, ETH and SOL from January through February 2025. The browser checks need the app running and Microsoft Edge installed; `check-engines.mjs` additionally expects a stopped simulation engine. Full-universe tests are separate from smoke tests. Analysis checks target ten trades per strategy and do not prove the absence of bias. Each execution writes a new diagnostic directory to preserve earlier evidence.
 
 Development commits are pushed to `main`. No development version tags are assigned. **1.00 is reserved for the completed, validated release.** See `VALIDATION.md` for the current verification record.
 

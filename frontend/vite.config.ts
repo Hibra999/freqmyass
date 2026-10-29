@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 import createVuePlugin from '@vitejs/plugin-vue';
 import ui from '@nuxt/ui/vite';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { resolve } from 'path';
 import IconsResolve from 'unplugin-icons/resolver';
 import Icons from 'unplugin-icons/vite';
@@ -10,7 +10,15 @@ import VueRouter from 'vue-router/vite';
 
 let commitHash: string = 'unknown';
 try {
-  commitHash = execSync('git rev-parse --short HEAD').toString();
+  commitHash = execFileSync('git', [
+    '-c',
+    `safe.directory=${resolve(import.meta.dirname, '..').replaceAll('\\', '/')}`,
+    'rev-parse',
+    '--short',
+    'HEAD',
+  ])
+    .toString()
+    .trim();
 } catch (error) {
   console.error('Failed to get commit hash. Running in this mode will not be supported.');
 }
@@ -32,6 +40,7 @@ export default defineConfig({
       },
     }),
     ui({
+      icon: { clientBundle: { scan: true } },
       ui: {
         colors: {
           primary: 'brand',
