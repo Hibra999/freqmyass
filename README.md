@@ -1,0 +1,57 @@
+# FreqMyAss
+
+A local, English trading workspace for Windows. Freqtrade performs all trading, backtesting and optimization. A redesigned Vue interface puts guided workflows first, with the official FreqUI engine tools available under Advanced.
+
+## Run
+
+Prerequisites: Windows, Miniconda, Git, Node.js and pnpm (the version is pinned in `frontend/package.json`).
+
+1. Run `Setup.cmd`. It creates an isolated Conda environment in `.runtime/env`, installs pinned Python dependencies, verifies the four strategy sources and builds the frontend.
+2. Run `Start.cmd`. The application opens at **http://127.0.0.1:8765**. Its server remains active when the browser closes.
+3. Open **Market data → Import all** to download the complete current NostalgiaForInfinityData snapshot and scan its coverage. Existing snapshots are preserved.
+4. Open **Backtesting**, choose spot or futures, strategies, capital and a period. Empty dates and pairs mean all available data for that exchange and market.
+5. Reports appear automatically after completed runs. Inspect each job log when a run or report fails.
+
+The configured defaults are **1,000 USDT**, **3 open positions**, automatic stake sizing and **5m candles**. NASOS also receives its required 1h informative candles. These are comparison defaults, not claims about the authors' recommended risk settings.
+
+## What is included
+
+- A guided research workflow, persistent queue, cancellation, job logs and stored configurations.
+- The four requested strategies, fetched from pinned upstream revisions with SHA-256 verification. Originals remain alongside the locally runnable copies.
+- Binance spot/futures and KuCoin spot data, with per-file start/end dates, duplicates and gap counts. KuCoin futures has no candles in the source snapshot.
+- Native Freqtrade trading controls, portfolio dashboard, charts, orders, history, balances, pairlists, data collector, lookahead analysis and recursive analysis.
+- Hyperopt jobs through the official CLI. Parameter export is disabled to avoid silently changing the original strategy settings.
+- QuantStats HTML reports, daily wallet curves, monthly and yearly compounded returns, trade tables and downloadable engine archives.
+- Native Freqtrade Telegram. Configure credentials in Settings and test the connection; commands are owned by the running Freqtrade trading process.
+- Multiple external engine connections through Settings. FreqAI requires a compatible strategy and its model dependencies; the four supplied strategies do not implement FreqAI features.
+
+## Data, money and credentials
+
+All mutable state is under `.runtime/`, excluded from Git: credentials, the Conda environment, original strategies, market data, job logs, engine configurations, trading databases and reports. Never publish this directory. The Git repository contains the application and reproducible source references, not the dataset or credentials.
+
+The application listens on loopback. Local workbench requests require an HTTP-only SameSite session cookie, and writes require a request protection header. The engine uses its own authenticated REST API on ports 8081 (research) and 8082 (trading). Do not expose these ports directly to the internet.
+
+Trading starts in simulation and in the stopped state. Live activation requires credentials plus the explicit `ENABLE LIVE TRADING` phrase. Starting a process does not start entries; use the native Start control. Use exchange keys without withdrawal permission. One native Telegram bot token must belong to one running trading process.
+
+Reports use Freqtrade's exported wallet, sampled daily in UTC with 365 periods per year. Final forced exits are included only when their exported net PnL explains the wallet discrepancy. The final balance must match the engine. Wallet equity is not an independently reconstructed mark-to-market series. Native Freqtrade drawdown and Sharpe metrics are labeled separately from QuantStats. A BTC benchmark is used only when its history covers the reporting period.
+
+Backtests depend on coverage, exchange metadata and Freqtrade's execution assumptions. Delisted or unsupported pairs can be rejected by the engine; logs must be reviewed. No missing markets are silently substituted. Backtest results do not guarantee live results.
+
+## Verification
+
+```powershell
+.runtime\env\python.exe -m pytest tests -q
+.runtime\env\python.exe scripts\validate_engine.py
+cd frontend
+pnpm typecheck
+pnpm build
+node check-workspace.mjs
+```
+
+The engine smoke test runs the four strategies against BTC, ETH and SOL from January through February 2025. The browser check needs the app running and Microsoft Edge installed. Full-universe tests are separate from smoke tests.
+
+Development commits are pushed to `main`. No development version tags are assigned. **1.00 is reserved for the completed, validated release.** See `VALIDATION.md` for the current verification record.
+
+## Credits and licensing
+
+This application incorporates FreqUI, distributed under GPL-3.0; its existing notices remain in `frontend/`. Freqtrade is an external, unmodified dependency. QuantStats is Apache-2.0. The strategy importer preserves source provenance in `strategies.lock.json`; downloaded third-party strategies are not republished here. See `THIRD_PARTY.md`.

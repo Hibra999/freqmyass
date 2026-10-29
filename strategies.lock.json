@@ -1,0 +1,22 @@
+{
+  "NASOSv4_SMA": {
+    "url": "https://raw.githubusercontent.com/remiotore/ccxt-freqtrade/44beaeb6a420cd8e9f2e4ea93e11d6cfa192ee03/strategies/NASOSv4_SMA.py",
+    "revision": "44beaeb6a420cd8e9f2e4ea93e11d6cfa192ee03",
+    "sha256": "7c5106e536c9fe176b0942123894dceb13d45d21f1e9ff99821d3cd5759499d3"
+  },
+  "NotAnotherSMAOffsetStrategyHO": {
+    "url": "https://raw.githubusercontent.com/davidzr/freqtrade-strategies/9623c1f3d8c7f60c8b411010fa26377e6ca99ab9/strategies/NotAnotherSMAOffsetStrategyHO/NotAnotherSMAOffsetStrategyHO.py",
+    "revision": "9623c1f3d8c7f60c8b411010fa26377e6ca99ab9",
+    "sha256": "9a616cb503c7f4649dd721946b62d8bfb8985b9bd2154932d0a36fc243383032"
+  },
+  "dip_catcher": {
+    "url": "https://raw.githubusercontent.com/viktors1982/trading/e572140b1b8cb550cb244c67d363087b81bd4ab8/freqtrade/strategies/dip_catcher.py",
+    "revision": "e572140b1b8cb550cb244c67d363087b81bd4ab8",
+    "sha256": "72c23c05faa67eaa2618fb565077f46ddbe10751c437f3ca83ce99259f82dcaa"
+  },
+  "SingleB_FixedRR": {
+    "url": "https://raw.githubusercontent.com/ly5586/backtest-autopsy/fbdc2c9e8267f2420106e20da24606a0cfb24ea0/strategy/SingleB_FixedRR.py",
+    "revision": "fbdc2c9e8267f2420106e20da24606a0cfb24ea0",
+    "sha256": "6fae0c352e8e44fbaebc98d5c179d177e00e1f9bda894af2a93d24b63fe767a9"
+  }
+}
