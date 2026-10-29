@@ -1,13 +1,13 @@
 # Validation record
 
-Release 1.00 is reserved until the remaining full-history futures campaign and final browser checks finish.
+Release **1.00**, validated on 2026-10-29 UTC. All six full-history campaigns and final browser checks completed.
 
 ## Environment and application
 
 - Windows, isolated Conda environment: Python 3.13.15, Freqtrade 2026.8, QuantStats 0.0.81. Freqtrade engine files are unchanged.
 - Setup.ps1 completed against the project environment. Python dependencies are constrained to the tested dependency closure; pip check passes. An entirely new Windows installation has not been tested.
 - 56 inherited frontend unit tests and 16 backend tests pass. Production build and TypeScript checks pass.
-- Browser checks cover desktop and mobile navigation, real reports and sandboxed QuantStats HTML, research authentication, native backtest tools, and the stopped simulation desk. Market compatibility selection displays every excluded pair.
+- All three browser checks pass: desktop and mobile navigation, real reports and sandboxed QuantStats HTML, research authentication, native backtest tools, the stopped simulation desk, report generation from saved archives and visible market exclusions.
 - Native Telegram connection test delivered successfully. The trading process exposes native Telegram commands and remains in simulation, stopped. No real-money orders were placed.
 - Empty trading-engine shutdown was exercised through the API. A separate test verifies that open positions prevent shutdown and that entries are paused first.
 - Live activation, profile mismatch, origin/session protection, path traversal, invalid money/date/market input, cancellation and worker recovery have focused tests.
@@ -28,9 +28,9 @@ All runs below start with 1,000 USDT, allow three open positions, use 5m candles
 | KuCoin spot | NASOSv4_SMA | 53 | 2,990 | Automatic | Complete; HTML reconciled |
 | KuCoin spot | NotAnotherSMAOffsetStrategyHO | 53 | 1,343 | Automatic | Complete; HTML reconciled |
 | Binance futures | dip_catcher | 326 | 15,663 | 330 USDT fixed | Complete; HTML reconciled |
-| Binance futures | SingleB_FixedRR | 326 | Pending | 330 USDT fixed | Running |
+| Binance futures | SingleB_FixedRR | 326 | 52,673 | 330 USDT fixed | Complete; HTML reconciled |
 
-Spot campaigns cover 2024-01-01 16:40 through 2026-10-02 03:00. The completed futures campaign covers 2024-01-01 02:30 through 2026-09-01 17:25.
+Spot campaigns cover 2024-01-01 16:40 through 2026-10-02 03:00. Futures campaigns start on 2024-01-01 (02:30 for dip_catcher, 04:10 for SingleB) and end on 2026-09-01 17:25.
 
 The initial attempts requested every downloaded pair. Binance rejected AERGO and SXP contracts because current metadata/leverage tiers were unavailable. KuCoin no longer returned AMPL, DEGO, EOS, MKR, NWC, PLU, SXP, USDJ, VIDT, VRA and XEM. All source files remain present. Subsequent campaigns explicitly selected the supported subset.
 

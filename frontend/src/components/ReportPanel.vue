@@ -234,7 +234,7 @@ function heat(value: number | undefined) {
           <div class="metric-label">Profit factor</div>
           <div class="metric-value">{{ current.profit_factor?.toFixed(2) || '—' }}</div>
           <div class="metric-foot">
-            Sharpe {{ current.sharpe?.toFixed(2) || '—' }} · Sortino
+            Freqtrade Sharpe {{ current.sharpe?.toFixed(2) || '—' }} · Sortino
             {{ current.sortino?.toFixed(2) || '—' }}
           </div>
         </section>

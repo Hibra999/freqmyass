@@ -61,7 +61,7 @@ node check-local-actions.mjs
 
 The engine smoke test runs the four strategies against BTC, ETH and SOL from January through February 2025. The browser checks need the app running and Microsoft Edge installed; `check-engines.mjs` additionally expects a stopped simulation engine. Full-universe tests are separate from smoke tests. Analysis checks target ten trades per strategy and do not prove the absence of bias. Each execution writes a new diagnostic directory to preserve earlier evidence.
 
-Development commits are pushed to `main`. No development version tags are assigned. **1.00 is reserved for the completed, validated release.** See `VALIDATION.md` for the current verification record.
+The first completed release is **1.00**. Development commits are pushed to `main` without development version tags. See `VALIDATION.md` for the verification record and known limits.
 
 ## Credits and licensing
 

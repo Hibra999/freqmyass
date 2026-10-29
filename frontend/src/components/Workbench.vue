@@ -223,7 +223,7 @@ const tools = [
             <div>
               <strong>{{
                 wb.status.value?.data_ready
-                  ? 'Full dataset downloaded'
+                  ? 'Market data available'
                   : 'Import your market history'
               }}</strong
               ><small>Binance spot & futures · KuCoin spot</small>
