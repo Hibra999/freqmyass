@@ -19,6 +19,7 @@ use([
   DataZoomComponent,
 ]);
 const wb = useWorkbench();
+const settingsStore = useSettingsStore();
 const current = ref<ReportDetail>();
 const tab = ref('overview');
 const tradePage = ref(0);
@@ -54,6 +55,7 @@ watch(
 );
 const chart = computed(() => ({
   animation: false,
+  backgroundColor: 'transparent',
   tooltip: { trigger: 'axis' },
   grid: { left: 65, right: 20, top: 25, bottom: 55 },
   xAxis: {
@@ -66,7 +68,7 @@ const chart = computed(() => ({
     type: 'value',
     scale: true,
     axisLabel: { color: '#91a0a6', fontSize: 10 },
-    splitLine: { lineStyle: { color: '#eff3f4' } },
+    splitLine: { lineStyle: { color: settingsStore.isDarkTheme ? '#2d4147' : '#eff3f4' } },
   },
   dataZoom: [{ type: 'inside' }, { type: 'slider', height: 16, bottom: 5 }],
   series: [
@@ -102,7 +104,9 @@ function monthly(year: number, month: number) {
 function heat(value: number | undefined) {
   return value === undefined
     ? ''
-    : `background:${value >= 0 ? '#e5f4ea' : '#fbeae5'};color:${value >= 0 ? '#34895e' : '#bc6656'}`;
+    : settingsStore.isDarkTheme
+      ? `background:${value >= 0 ? '#183e34' : '#492c2c'};color:${value >= 0 ? '#8be0b6' : '#ffaaa1'}`
+      : `background:${value >= 0 ? '#e5f4ea' : '#fbeae5'};color:${value >= 0 ? '#34895e' : '#bc6656'}`;
 }
 </script>
 <template>
@@ -262,7 +266,12 @@ function heat(value: number | undefined) {
             </div>
             <span class="pill safe">RECONCILED</span>
           </div>
-          <VChart class="report-chart" :option="chart" autoresize />
+          <VChart
+            :theme="settingsStore.chartTheme"
+            class="report-chart"
+            :option="chart"
+            autoresize
+          />
           <p>{{ current.basis }}</p>
         </section>
         <section class="card">
@@ -309,7 +318,12 @@ function heat(value: number | undefined) {
         </section>
         <section class="card">
           <h2>Daily wallet drawdown</h2>
-          <VChart class="report-chart" :option="drawdown" autoresize /></section
+          <VChart
+            :theme="settingsStore.chartTheme"
+            class="report-chart"
+            :option="drawdown"
+            autoresize
+          /></section
       ></template>
       <section v-else-if="tab === 'trades'" class="card">
         <h2>Every trade, in context</h2>
@@ -372,7 +386,7 @@ function heat(value: number | undefined) {
         <iframe
           v-if="current.html_ready"
           class="report-frame"
-          :src="`/workbench/reports/${current.id}/html`"
+          :src="`/workbench/reports/${current.id}/html?theme=${settingsStore.chartTheme}`"
           sandbox
           title="QuantStats performance report"
         ></iframe>

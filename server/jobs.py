@@ -46,6 +46,10 @@ def list_jobs():
 
 def recover_jobs():
     for job in list_jobs():
+        if job['status'] == 'failed':
+            detail = failure_detail(job['id'])
+            if not job.get('recommendation') or (detail and detail != job['message']):
+                update(job['id'], message=detail or job['message'], recommendation=failure_hint(detail or job['message']))
         if job['status'] in ('running', 'queued', 'cancelling'):
             owner = job.get('worker')
             if owner:
@@ -56,6 +60,28 @@ def recover_jobs():
                 except psutil.Error:
                     pass
             update(job['id'], status='interrupted', message='Application restarted. Review log and run again.')
+
+
+def failure_detail(job_id):
+    path = RUNTIME / 'jobs' / f'{job_id}.log'
+    if not path.exists():
+        return ''
+    with path.open('rb') as file:
+        file.seek(max(0, path.stat().st_size - 18000))
+        tail = file.read().decode('utf-8', errors='replace')
+    errors = re.findall(r'(?:ERROR - |^(?:[\w.]*Error|OperationalException): )(.+)', tail, re.M)
+    return redact(errors[-1]) if errors else ''
+
+
+def failure_hint(message):
+    text = message.lower()
+    if 'no data found' in text:
+        return 'Select dates within the downloaded history. Market data shows each file’s actual coverage.'
+    if 'leverage tiers' in text or 'market information' in text:
+        return 'Use Backtesting → Advanced configuration → Check and select available markets. Review exclusions before rerunning; the exchange no longer provides required metadata for these pairs.'
+    if 'stake amount' in text and 'too high' in text:
+        return 'Automatic compounding exceeded an exchange stake limit. Create a separate experiment with fixed USDT per entry within that limit. Allocation changes affect comparability.'
+    return 'Inspect the final error in the log and review this run’s settings before retrying.'
 
 
 def run_command(job_id, command):
@@ -73,9 +99,7 @@ def run_command(job_id, command):
         if read_json(RUNTIME / 'jobs' / f'{job_id}.json')['status'] in ('cancelled', 'cancelling'):
             raise InterruptedError('Cancelled by user.')
         if code:
-            tail = (RUNTIME / 'jobs' / f'{job_id}.log').read_text(encoding='utf-8', errors='replace')[-18000:]
-            errors = re.findall(r'ERROR - (.+)', tail)
-            detail = redact(errors[-1]) if errors else 'See the job log for details.'
+            detail = failure_detail(job_id) or 'See the job log for details.'
             raise RuntimeError(f'Freqtrade exited with code {code}: {detail}')
 
 
@@ -110,6 +134,10 @@ def execute(job_id):
             from server.reports import generate
             result = generate(p['file'], p['strategy'])
             update(job_id, results=[result['id']])
+        elif kind == 'simulation-export':
+            from server.simulations import export_public
+            result = export_public(p['simulation_id'])
+            update(job_id, results=[result['directory']])
         else:
             names = p['strategies']
             outputs = []
@@ -170,7 +198,7 @@ def execute(job_id):
     except InterruptedError:
         update(job_id, status='cancelled', message='Cancelled. Partial files are kept for inspection.', finished=now())
     except Exception as exc:
-        update(job_id, status='failed', message=redact(str(exc)), finished=now())
+        update(job_id, status='failed', message=redact(str(exc)), recommendation=failure_hint(str(exc)), finished=now())
 
 
 def cancel(job_id):

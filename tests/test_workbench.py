@@ -249,3 +249,38 @@ def test_public_export_rejects_credentials_and_personal_paths():
     for text in ('private-secret', r'C:\Users\someone\settings.json'):
         with pytest.raises(ValueError):
             public_bytes(text, ['private-secret'])
+
+
+def test_native_failures_show_specific_remediation_without_changing_outcome(monkeypatch, tmp_path):
+    from server import jobs
+    from server.catalog import write_json
+    monkeypatch.setattr(jobs, 'RUNTIME', tmp_path)
+    job_id = 'a' * 32
+    record = dict(id=job_id, status='failed', created='2025-01-01', message='Process exited with code 1.')
+    write_json(tmp_path / 'jobs' / f'{job_id}.json', record)
+    (tmp_path / 'jobs' / f'{job_id}.log').write_text("freqtrade - ERROR - Fatal exception!\nTraceback\nValueError: Can't get market information for symbol NWC/USDT\n")
+    jobs.recover_jobs()
+    saved = jobs.read_json(tmp_path / 'jobs' / f'{job_id}.json')
+    assert saved['status'] == 'failed'
+    assert 'NWC/USDT' in saved['message']
+    assert 'available markets' in saved['recommendation']
+    assert 'coverage' in jobs.failure_hint('No data found. Terminating.')
+    assert 'fixed USDT' in jobs.failure_hint('Stake amount 800000 too high for AI/USDT:USDT')
+
+
+def test_dark_report_view_keeps_original_download_and_sandbox(monkeypatch, tmp_path):
+    from server import app as module
+    monkeypatch.setattr(module, 'RUNTIME', tmp_path)
+    monkeypatch.setattr(module, 'report', lambda _: {'html_ready': True, 'strategy': 'test'})
+    path = tmp_path / 'reports' / ('a' * 24 + '.html')
+    path.parent.mkdir()
+    original = '<html><head></head><body>Metrics</body></html>'
+    path.write_text(original)
+    client = TestClient(app)
+    client.cookies.set('fma_session', SESSION)
+    response = client.get('/workbench/reports/' + 'a' * 24 + '/html?theme=dark')
+    assert '#17252a' in response.text
+    assert 'sandbox;' in response.headers['content-security-policy']
+    download = client.get('/workbench/reports/' + 'a' * 24 + '/html?theme=dark&download=true')
+    assert download.text == original
+    assert path.read_text() == original

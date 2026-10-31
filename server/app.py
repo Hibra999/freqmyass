@@ -15,12 +15,12 @@ from typing import Literal
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from server.catalog import ROOT, RUNTIME, DATA, STRATEGIES, STRATEGY_INFO, USER_DATA, RESULTS, initialize, settings, read_json, write_json, make_config, strategy, available_pairs
-from server import jobs, reports
+from server import jobs, reports, simulations
 from server.telegram_menu import COMMANDS
 
 initialize()
@@ -179,6 +179,78 @@ def save_settings(body: SettingsInput):
 @app.get('/workbench/data')
 def data_inventory():
     return read_json(RUNTIME / 'inventory.json', {'files': [], 'count': 0, 'bytes': 0})
+
+
+class SimulationInput(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    paths: int = Field(default=1000000, ge=1, le=1000000)
+    days: int = Field(default=365, ge=1, le=365)
+    workers: int = Field(default=16, ge=1, le=16)
+    seed: int = Field(default=20261030, ge=0, le=2**32 - 1)
+    capital: float = Field(default=1000, gt=0, le=1e9, allow_inf_nan=False)
+    max_open_trades: int = Field(default=3, ge=1, le=100)
+    stake_amount: float | Literal['unlimited'] = 'unlimited'
+    volatility: float | None = Field(default=None, gt=0, le=3, allow_inf_nan=False)
+    drifts: list[float] = Field(default=[-0.3, 0.0, 0.3], min_length=3, max_length=3)
+    publish_on_complete: bool = True
+
+    @field_validator('stake_amount')
+    @classmethod
+    def valid_stake(cls, value):
+        if value != 'unlimited' and (not math.isfinite(value) or value <= 0):
+            raise ValueError('Stake must be positive and finite.')
+        return value
+
+    @field_validator('drifts')
+    @classmethod
+    def valid_drifts(cls, values):
+        if any(not math.isfinite(value) or abs(value) > 2 for value in values) or values != sorted(values):
+            raise ValueError('Use three ordered finite drifts between -2 and 2.')
+        return values
+
+
+@app.get('/workbench/simulations')
+def simulation_list():
+    return simulations.list_runs()
+
+
+@app.get('/workbench/simulations/calibration')
+def simulation_calibration():
+    try:
+        return {**simulations.calibration(), 'gpu': simulations.gpu_info()}
+    except Exception as exc:
+        raise HTTPException(422, jobs.redact(str(exc)))
+
+
+@app.post('/workbench/simulations')
+def create_simulation(body: SimulationInput):
+    try:
+        with ENGINE_LOCK:
+            return simulations.create(body.model_dump())
+    except Exception as exc:
+        raise HTTPException(422, jobs.redact(str(exc)))
+
+
+@app.get('/workbench/simulations/{run_id}')
+def simulation_result(run_id: str):
+    try:
+        path = simulations.directory(run_id)
+        return dict(state=simulations.state(run_id), config=read_json(path / 'config.json'),
+                    summary=read_json(path / 'summary.json'))
+    except ValueError as exc:
+        raise HTTPException(404, str(exc))
+
+
+@app.post('/workbench/simulations/{run_id}/{action}')
+def simulation_control(run_id: str, action: Literal['pause', 'resume', 'export']):
+    try:
+        simulations.directory(run_id)
+        if action == 'export':
+            return jobs.submit('simulation-export', {'simulation_id': run_id})
+        with ENGINE_LOCK:
+            return simulations.control(run_id, action)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc))
 
 
 @app.get('/workbench/pairs/{exchange}/{market}')
@@ -396,13 +468,25 @@ def create_report(body: ReportInput):
 
 
 @app.get('/workbench/reports/{report_id}/html')
-def report_html(report_id: str, download: bool = False):
+def report_html(report_id: str, download: bool = False, theme: Literal['light', 'dark'] = 'light'):
     record = report(report_id)
     if not record['html_ready']:
         raise HTTPException(422, 'At least two daily returns and a nonzero return are required for the HTML tear sheet.')
-    return FileResponse(RUNTIME / 'reports' / f'{report_id}.html', media_type='text/html',
+    path = RUNTIME / 'reports' / f'{report_id}.html'
+    headers = {'Content-Security-Policy': "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline';"}
+    if theme == 'dark' and not download:
+        css = '''<style>
+body { background: #17252a !important; color: #dce9e9 !important; }
+h1,h2,h3,h4,p,td,th,a,dt,dd { color: #dce9e9 !important; }
+aside,thead,tr:nth-child(even) { background: #203238 !important; }
+table,td,th { border-color: #3a5158 !important; }
+svg [id='patch_1'] path { fill: #17252a !important; }
+svg g[id^='text_'],svg g[id^='text_'] g,svg g[id^='text_'] use { fill: #dce9e9 !important; }
+</style>'''
+        return HTMLResponse(path.read_text(encoding='utf-8').replace('</head>', css + '</head>'), headers=headers)
+    return FileResponse(path, media_type='text/html',
                         filename=f"{record['strategy']}-quantstats.html" if download else None,
-                        headers={'Content-Security-Policy': "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline';"})
+                        headers=headers)
 
 
 @app.get('/workbench/results')

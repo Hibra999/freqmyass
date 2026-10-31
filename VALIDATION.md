@@ -2,6 +2,20 @@
 
 Release **1.00**, validated on 2026-10-29 UTC. All six full-history campaigns and final browser checks completed.
 
+## Follow-up: dark mode and CUDA price trajectories
+
+Validated on 2026-10-30. CUDA hardware: NVIDIA GeForce RTX 5070 with 12,227 MiB, driver 621.01, CuPy 14.2.0 and CUDA runtime 13.2. The CPU has 24 physical / 32 logical cores; RAM is 64 GiB.
+
+- Dark mode now covers the guided workspace, original FreqUI, charts and sandboxed QuantStats HTML. Downloaded HTML remains original. Historical failures retain their status and now show the specific cause and remediation; later successful runs are identified. The ten earlier failures comprised four missing-data attempts, four unsupported market/metadata attempts and two excessive compounded stakes.
+- GBM checks cover reproducible seeds, positive OHLC, initial price after warmup, the zero-volatility analytic limit and terminal log-return moments. Real CUDA tests run on this GPU. A 12-path / 7-day integration test completed all 48 native strategy evaluations without errors, paused/resumed without duplicates, preserved stored rows and proved independence from previous paths and worker assignment.
+- Native CLI parity on the same synthetic candles matches trades, final balance and drawdown for all four strategies. A separate full-year CUDA validation completed three 365-day paths / 12 evaluations without errors, using frozen strategy files and hashes.
+- Backend tests cover parameter bounds, path traversal, failure accounting, zero-trade outcomes and automatic publication refusing unrelated changes. Publication commits only its own generated result directory and never force-pushes. Final result pushes remain conditional on unchanged branch/remote, clean unrelated files and working Git credentials.
+- All 29 backend tests and 56 frontend tests pass. TypeScript and the production build pass. Edge checks verify the CUDA dashboard's annual results, all three regimes, charts, native metrics, dark/mobile layout and API bounds, alongside the existing guided and native UI checks. Snapshot exports preserve counts, portable Git paths and SHA-256 checksums; result files disable Git newline conversion so Windows checkouts preserve their bytes.
+- These short validations do not claim the million-path production experiment is complete. Its committed `results/monte-carlo/<run-id>/progress.json` records actual completed/target counts; the local UI shows live progress. One-minute price generation runs on CUDA; unchanged Freqtrade backtests run on CPU. Full paths are evaluated, while candle files are reused and per-path outcomes are retained.
+- Production run `4f03f4f4fe2e40978d71fa25f585a3a1` reached 64 annual paths / 256 evaluations with zero failures before its first export. All 16 workers completed their in-flight paths for a consistent checkpoint. The measured first batch used about 138 MiB of reusable candle files and left over 30 GiB RAM available. Initial throughput projects several weeks; this is an estimate, not a completion claim.
+
+The simulator keeps Windows awake while its process runs without changing global power settings. Browser or backend closure does not terminate the supervisor. Pause/resume was exercised; a real power-loss/reboot recovery and a fresh CUDA installation on another machine were not tested.
+
 ## Follow-up: native UI, Telegram and published results
 
 Validated on 2026-10-30. The original 1.00 tag remains unchanged; these improvements are subsequent commits on main.

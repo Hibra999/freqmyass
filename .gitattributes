@@ -1,3 +1,4 @@
+results/** -text whitespace=cr-at-eol
 results/**/quantstats.html -diff -whitespace linguist-generated=true
 results/**/*.csv linguist-generated=true
 results/**/*.gz -diff linguist-generated=true

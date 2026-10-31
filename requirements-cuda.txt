@@ -1,0 +1,6 @@
+# Optional GPU generation for the Monte Carlo lab; Freqtrade remains a CPU engine.
+cupy-cuda13x[ctk]==14.2.0
+cuda-pathfinder==1.8.1
+cuda-toolkit==13.4.2
+nvidia-cuda-nvrtc==13.4.92
+nvidia-cuda-runtime==13.4.92

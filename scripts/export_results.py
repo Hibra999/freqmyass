@@ -109,6 +109,8 @@ Six completed full-history campaigns from release **1.00**. These are simulated 
     text += '''
 ## Open the results
 
+Synthetic CUDA experiments are published separately under [Monte Carlo](monte-carlo/README.md). Their completed counts and model assumptions are independent of these historical campaigns.
+
 Each campaign contains:
 
 - `quantstats.html`: complete QuantStats HTML with monthly heatmaps, annual returns, risk metrics, equity, drawdown and a BTC benchmark. Download the file and open it in a browser; GitHub displays HTML source.
@@ -133,7 +135,7 @@ Large compounded historical returns do not establish realistic liquidity, slippa
 Regenerate this snapshot locally with `.runtime\\env\\python.exe scripts\\export_results.py` after the six recorded campaigns exist. The exporter checks trade counts, final balances, compressed-data round trips and private settings before writing. Development smoke tests and failed attempts remain in local activity history.
 '''
     (OUTPUT / 'README.md').write_bytes(public_bytes(text, secrets))
-    files = sorted(path for path in OUTPUT.rglob('*') if path.is_file() and path.name != 'SHA256SUMS')
+    files = sorted([OUTPUT / 'README.md', *[path for row in rows for path in (OUTPUT / row['directory']).iterdir() if path.is_file()]])
     manifest = ''.join(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(OUTPUT).as_posix()}\n' for path in files)
     (OUTPUT / 'SHA256SUMS').write_text(manifest, encoding='utf-8')
     print(f'Published {len(rows)} campaigns, {sum(row["trades"] for row in rows):,} trades; {sum(p.stat().st_size for p in files) / 1024**2:.1f} MiB.')

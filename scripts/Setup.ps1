@@ -8,6 +8,10 @@ if (-not (Test-Path (Join-Path $envPath 'python.exe'))) {
 }
 & (Join-Path $envPath 'python.exe') -m pip install -r requirements.txt -c requirements-lock.txt
 if ($LASTEXITCODE) { throw 'Python dependency installation failed.' }
+if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
+    & (Join-Path $envPath 'python.exe') -m pip install -r requirements-cuda.txt
+    if ($LASTEXITCODE) { throw 'CUDA dependency installation failed.' }
+}
 & (Join-Path $envPath 'python.exe') scripts\import_strategies.py
 if ($LASTEXITCODE) { throw 'Strategy integrity check failed.' }
 Push-Location frontend

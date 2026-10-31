@@ -64,6 +64,9 @@ onBeforeUnmount(() => clearInterval(poll));
       <UButton variant="outline" icon="mdi:chart-box-outline" @click="guided('reports')"
         >QuantStats reports</UButton
       >
+      <UButton variant="outline" icon="mdi:chart-bell-curve" @click="guided('simulation')"
+        >Monte Carlo</UButton
+      >
       <UButton variant="outline" icon="mdi:view-dashboard-outline" @click="guided()"
         >Guided workspace</UButton
       >

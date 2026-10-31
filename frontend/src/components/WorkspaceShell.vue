@@ -3,12 +3,14 @@ const route = useRoute();
 const bots = useBotStore();
 const wb = useWorkbench();
 const interfaceMode = useInterfaceMode();
+const settingsStore = useSettingsStore();
 const menu = ref(false);
 const links = [
   ['overview', 'Overview', 'mdi:view-dashboard-outline'],
   ['strategies', 'Strategies', 'mdi:flask-outline'],
   ['backtesting', 'Backtesting', 'mdi:play-circle-outline'],
   ['reports', 'Reports', 'mdi:chart-box-outline'],
+  ['simulation', 'Monte Carlo', 'mdi:chart-bell-curve'],
   ['data', 'Market data', 'mdi:database-outline'],
   ['trading', 'Trading', 'mdi:swap-horizontal'],
   ['advanced', 'Advanced', 'mdi:tune-variant'],
@@ -30,7 +32,7 @@ onMounted(async () => {
 onBeforeUnmount(() => clearInterval(poll));
 </script>
 <template>
-  <div class="workspace">
+  <div class="workspace" :class="{ 'dark-workspace': settingsStore.isDarkTheme }">
     <aside class="sidebar" :class="{ 'is-open': menu }">
       <RouterLink to="/" class="brand"
         ><span class="brand-symbol">fm</span>
@@ -76,6 +78,7 @@ onBeforeUnmount(() => clearInterval(poll));
           }}</strong>
         </div>
         <div class="topbar-actions">
+          <ThemeSelect />
           <span
             class="pill"
             :class="wb.status.value?.engines.trading?.mode === 'live' ? 'danger' : 'safe'"

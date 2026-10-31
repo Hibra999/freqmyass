@@ -505,15 +505,15 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
-.workspace label {
+:scope label {
   display: block;
   font-size: 11px;
   font-weight: 600;
   color: #52696f;
 }
-.workspace label input:not([type='checkbox']),
-.workspace label select,
-.workspace label textarea {
+:scope label input:not([type='checkbox']),
+:scope label select,
+:scope label textarea {
   display: block;
   width: 100%;
   margin-top: 8px;
@@ -526,13 +526,13 @@
   color: #304f56;
   min-height: 40px;
 }
-.workspace input:focus,
-.workspace select:focus,
-.workspace textarea:focus {
+:scope input:focus,
+:scope select:focus,
+:scope textarea:focus {
   outline: 2px solid #64b79a;
   outline-offset: 1px;
 }
-.workspace label small {
+:scope label small {
   display: block;
   color: #99a7ab;
   font-size: 10px;
@@ -922,4 +922,21 @@ summary:focus-visible {
     gap: 10px;
   }
 }
+
+:scope.dark-workspace { background: #10191d; color: #dce9e9; color-scheme: dark; }
+:scope.dark-workspace :is(.card, .workspace-topbar, .secondary-button, .segmented button.active) { background: #17252a; border-color: #2b4147; color: #dce9e9; }
+:scope.dark-workspace :is(h1, h2, .metric-value, .breadcrumb strong, label, .data-table th) { color: #dce9e9; }
+:scope.dark-workspace :is(.card p, .page-heading p, .metric-label, .metric-foot, .checklist-row small, .local-label) { color: #a0b5bd; }
+:scope.dark-workspace :is(.segmented, .data-table th, .pill, .job-icon, .step-heading > span) { background: #203238; color: #b6cbd2; }
+:scope.dark-workspace :is(input:not([type='checkbox']), select, textarea) { background: #111e23; border-color: #3a5158; color: #e3eeee; }
+:scope.dark-workspace :is(.data-table td, .data-table th, .job-row, .advanced-details) { border-color: #2b4147; }
+:scope.dark-workspace .data-table td { color: #b6cbd2; }
+:scope.dark-workspace :is(.report-list-item:hover, .report-list-item.selected, .strategy-option.chosen, .welcome-card) { background: #18352f; border-color: #337864; }
+:scope.dark-workspace :is(.text-button, .positive, .metric-value.positive) { color: #80d8b5 !important; }
+:scope.dark-workspace :is(.negative, .metric-value.negative) { color: #f5a197 !important; }
+:scope.dark-workspace :is(.pill.safe, .checklist-icon, .strategy-avatar, .message.success) { background: #183e34; color: #8be0b6; }
+:scope.dark-workspace :is(.pill.danger, .message.error) { background: #492c2c; color: #ffaaa1; }
+:scope.dark-workspace .warning-note { background: #3c3424; color: #eed19b; }
+:scope.dark-workspace .strategy-option { border-color: #3a5158; }
+.job-description p { white-space: normal; overflow-wrap: anywhere; }
 }

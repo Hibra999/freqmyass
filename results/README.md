@@ -13,6 +13,8 @@ Six completed full-history campaigns from release **1.00**. These are simulated 
 
 ## Open the results
 
+Synthetic CUDA experiments are published separately under [Monte Carlo](monte-carlo/README.md). Their completed counts and model assumptions are independent of these historical campaigns.
+
 Each campaign contains:
 
 - `quantstats.html`: complete QuantStats HTML with monthly heatmaps, annual returns, risk metrics, equity, drawdown and a BTC benchmark. Download the file and open it in a browser; GitHub displays HTML source.

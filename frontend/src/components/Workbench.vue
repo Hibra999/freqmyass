@@ -23,6 +23,10 @@ const titles: Record<string, [string, string]> = {
     'Your entire market library.',
     'All available files from NostalgiaForInfinityData, stored locally.',
   ],
+  simulation: [
+    'Explore possible markets.',
+    'CUDA price simulation. One million complete GBM paths. Original Freqtrade strategies.',
+  ],
   trading: [
     'From research to a running bot.',
     'Start in simulation. Live trading always requires explicit activation.',
@@ -398,6 +402,7 @@ const tools = [
     </section>
     <JobQueue
   /></template>
+  <template v-else-if="view === 'simulation'"><SimulationLab /></template>
   <template v-else-if="view === 'trading'"
     ><div v-if="wb.status.value?.engines.trading?.running" class="card">
       <div class="section-title">

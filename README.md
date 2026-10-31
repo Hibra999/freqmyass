@@ -28,9 +28,21 @@ Advanced configuration also offers fixed USDT per entry. This can be necessary f
 - QuantStats HTML reports, daily wallet curves, monthly and yearly compounded returns, trade tables and downloadable engine archives. Saved native backtest archives can also be selected under Reports.
 - Native Freqtrade Telegram. Configure credentials in Settings and test the connection; commands are owned by the running Freqtrade trading process.
 - **Full FreqUI** in the sidebar restores the original navigation, theme selector, bot selector, refresh controls, customizable layouts, mobile navigation and all retained native pages. Switch between research and trading engines in its top bar; return to the guided workspace or QuantStats reports at any time. The view preference is saved in this browser.
+- Dark mode is the default in both workspaces, charts and embedded QuantStats reports. The theme selector retains your choice; downloaded QuantStats HTML stays original.
+- **Monte Carlo** generates complete synthetic BTC/USDT trajectories on CUDA and evaluates all four strategies with native Freqtrade. Defaults: 1,000,000 paths, 365 days, 5m candles and 16 CPU workers. See [simulation results and assumptions](results/monte-carlo/README.md).
 - Multiple external engine connections through Settings. FreqAI requires a compatible strategy and its model dependencies; the four supplied strategies do not implement FreqAI features.
 
 Complete 326-contract futures campaigns used approximately 51 GiB of RAM on the validation machine. The workbench serializes its research queue and Hyperopt defaults to one worker. Native tools and external engines run independently; avoid launching another large campaign alongside one already running.
+
+## CUDA Monte Carlo
+
+Setup installs the pinned `requirements-cuda.txt` dependencies when `nvidia-smi` detects NVIDIA support. The validated machine uses an RTX 5070, CuPy 14.2.0 and CUDA runtime 13.2. CUDA generates every GBM increment and price path; the original Freqtrade strategy evaluation runs on CPU. One million annual paths require four million native backtests, so completion takes sustained computing time measured in days. The interface estimates remaining time from actual throughput.
+
+The model splits paths across hypothetical annual drifts of -30%, 0% and +30%. It calibrates annual volatility from historical BTC/USDT 5m log returns. Five one-minute GBM samples form each 5m candle. Synthetic volume is constant, funding is zero and futures mark prices equal synthetic spot. These are conditional model experiments, not forecasts. Every strategy sees the same path, with 1,000 USDT, automatic sizing and three maximum positions by default. Native single-pair rules permit one BTC position at a time.
+
+Each completed path is committed to local SQLite. **Pause after active paths** stops dispatching, **Resume simulation** continues missing path IDs, and **Save snapshot in repository** exports a consistent paused snapshot. Seeds and frozen runnable strategy hashes preserve reproducibility. The worker survives browser and backend closure and prevents Windows idle sleep while active. After a restart or manual suspension, reopen the app and resume. No scheduled task or global power setting is installed.
+
+On completion, the worker exports every outcome to `results/monte-carlo/<run-id>/`, checks for credentials, commits only that run's files and pushes `main` to the configured repository. It refuses publication if unrelated changes exist, the branch/remote differs, or Git authentication fails. Results remain saved and the UI shows the publication error. It never force-pushes. Partial exports clearly record completed and requested counts.
 
 ## Data, money and credentials
 
@@ -54,12 +66,14 @@ When a final position's candles end before the campaign, Freqtrade uses its last
 .runtime\env\python.exe -m pytest tests -q
 .runtime\env\python.exe scripts\validate_engine.py
 .runtime\env\python.exe scripts\validate_analysis.py
+.runtime\env\python.exe scripts\validate_simulation.py
 cd frontend
 pnpm typecheck
 pnpm build
 node check-workspace.mjs
 node check-engines.mjs
 node check-native-ui.mjs
+node check-simulation.mjs
 node check-local-actions.mjs
 ```
 

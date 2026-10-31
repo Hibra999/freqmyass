@@ -3,6 +3,17 @@ import './styles/workbench.css';
 const settingsStore = useSettingsStore();
 const colorStore = useColorStore();
 const interfaceMode = useInterfaceMode();
+// An explicit guided-page URL takes precedence over the saved workspace preference.
+if (new URLSearchParams(location.search).has('view')) interfaceMode.value = 'guided';
+if (!localStorage.getItem('freqmyass-dark-default')) {
+  settingsStore.currentTheme = 'dark';
+  localStorage.setItem('freqmyass-dark-default', '1');
+}
+watch(
+  () => settingsStore.isDarkTheme,
+  (dark) => document.documentElement.classList.toggle('dark', dark),
+  { immediate: true },
+);
 onMounted(() => {
   setTimezone(settingsStore.timezone);
   colorStore.updateProfitLossColor();

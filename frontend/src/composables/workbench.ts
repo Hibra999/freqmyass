@@ -11,6 +11,7 @@ export interface StrategyCard {
   branch: string;
 }
 export interface ResearchJob {
+  recommendation?: string;
   report_warnings?: string[];
   id: string;
   kind: string;

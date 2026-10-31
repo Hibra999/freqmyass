@@ -3,6 +3,19 @@ const wb = useWorkbench();
 const log = ref('');
 const opened = ref('');
 const page = ref(0);
+function laterCompleted(job: NonNullable<typeof wb.status.value>['jobs'][number]) {
+  return (
+    job.status === 'failed' &&
+    wb.status.value?.jobs.some(
+      (other) =>
+        other.status === 'completed' &&
+        other.kind === job.kind &&
+        other.created > job.created &&
+        other.payload.exchange === job.payload.exchange &&
+        JSON.stringify(other.payload.strategies) === JSON.stringify(job.payload.strategies),
+    )
+  );
+}
 async function view(id: string) {
   await wb.action(async () => {
     opened.value = id;
@@ -47,6 +60,11 @@ async function view(id: string) {
         }}</strong
         ><small>{{ job.kind }} · {{ new Date(job.created).toLocaleString('en-US') }}</small>
         <p>{{ job.message }}</p>
+        <p v-if="job.recommendation">{{ job.recommendation }}</p>
+        <small v-if="laterCompleted(job)"
+          >A later run completed with revised settings. This earlier failure remains in
+          history.</small
+        >
       </div>
       <span
         class="pill"

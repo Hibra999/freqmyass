@@ -1,0 +1,15 @@
+{
+  "id": "4f03f4f4fe2e40978d71fa25f585a3a1",
+  "created": 1793420266.4189425,
+  "status": "paused",
+  "completed": 64,
+  "target": 1000000,
+  "strategy_evaluations": 256,
+  "failures": 0,
+  "workers": 16,
+  "horizon_days": 365,
+  "elapsed_seconds": 163.0893132000001,
+  "message": "Paused. Resume keeps completed paths.",
+  "paths_per_hour": 1457.6770777335655,
+  "eta_seconds": 2469524.735613608
+}
