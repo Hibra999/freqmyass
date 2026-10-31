@@ -2,6 +2,7 @@
 import './styles/workbench.css';
 const settingsStore = useSettingsStore();
 const colorStore = useColorStore();
+const interfaceMode = useInterfaceMode();
 onMounted(() => {
   setTimezone(settingsStore.timezone);
   colorStore.updateProfitLossColor();
@@ -18,7 +19,8 @@ watch(
 <template>
   <UApp>
     <div id="app" class="flex flex-col h-dvh" :style="colorStore.cssVars">
-      <WorkspaceShell><RouterView /></WorkspaceShell>
+      <NativeWorkspace v-if="interfaceMode === 'native'"><RouterView /></NativeWorkspace>
+      <WorkspaceShell v-else><RouterView /></WorkspaceShell>
     </div>
   </UApp>
 </template>

@@ -74,6 +74,7 @@ export interface WorkbenchStatus {
   capital: number;
   max_open_trades: number;
   telegram_ready: boolean;
+  telegram_engine_running: boolean;
   exchange_ready: boolean;
   jobs: ResearchJob[];
   reports: ReportSummary[];

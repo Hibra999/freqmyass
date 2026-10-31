@@ -35,6 +35,13 @@ const titles: Record<string, [string, string]> = {
 };
 const latest = computed(() => wb.status.value?.reports[0]);
 const totalPairs = computed(() => wb.status.value?.datasets.reduce((n, d) => n + d.pairs, 0) || 0);
+const telegramStatus = computed(() =>
+  wb.status.value?.telegram_engine_running
+    ? 'Engine running · send /help in Telegram to verify reception'
+    : wb.status.value?.telegram_ready
+      ? 'Credentials saved · open or restart the trading engine to receive commands'
+      : 'Add credentials in Settings',
+);
 const inventory = ref<{
   count: number;
   bytes: number;
@@ -222,9 +229,7 @@ const tools = [
             /></span>
             <div>
               <strong>{{
-                wb.status.value?.data_ready
-                  ? 'Market data available'
-                  : 'Import your market history'
+                wb.status.value?.data_ready ? 'Market data available' : 'Import your market history'
               }}</strong
               ><small>Binance spot & futures · KuCoin spot</small>
             </div>
@@ -232,15 +237,11 @@ const tools = [
           </div>
           <div class="checklist-row">
             <span class="checklist-icon"
-              ><UIcon :name="wb.status.value?.telegram_ready ? 'mdi:check' : 'mdi:send-outline'"
+              ><UIcon
+                :name="wb.status.value?.telegram_engine_running ? 'mdi:check' : 'mdi:send-outline'"
             /></span>
             <div>
-              <strong>Native Telegram integration</strong
-              ><small>{{
-                wb.status.value?.telegram_ready
-                  ? 'Credentials configured locally'
-                  : 'Add credentials in Settings'
-              }}</small>
+              <strong>Native Telegram integration</strong><small>{{ telegramStatus }}</small>
             </div>
           </div>
         </div>
@@ -488,8 +489,30 @@ const tools = [
             placeholder="Leave blank to keep the saved chat ID"
         /></label>
         <p>
-          Freqtrade owns the bot commands. Use one Telegram token per running bot. A test message
-          does not start trading.
+          {{ telegramStatus }}. Freqtrade owns all commands. Use a dedicated Telegram token; another
+          program such as OpenClaw can consume its messages. The outbound test only checks sending.
+        </p>
+        <div class="button-row">
+          <RouterLink class="secondary-button" to="/?view=trading"
+            >Open trading controls</RouterLink
+          >
+          <button
+            type="button"
+            class="secondary-button"
+            :disabled="wb.busy.value || !wb.status.value?.telegram_ready"
+            @click="
+              wb.action(
+                () => workbenchApi('/telegram/commands', {}),
+                'Freqtrade command menu installed. Reopen the Telegram chat, then send /help.',
+              )
+            "
+          >
+            Install Freqtrade command menu
+          </button>
+        </div>
+        <p>
+          Installing the menu replaces this bot's command list. It does not start trading. Use /help
+          or /show_config to check reception. /start starts trading in the active mode.
         </p>
         <details class="advanced-details">
           <summary>Exchange credentials · required only for live trading</summary>
@@ -528,7 +551,7 @@ const tools = [
             :disabled="wb.busy.value"
             @click="wb.action(() => workbenchApi('/telegram/test', {}), 'Test message sent.')"
           >
-            Test Telegram
+            Test outgoing message
           </button>
         </div>
       </form>

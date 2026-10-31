@@ -1,0 +1,232 @@
+{
+  "strategy": "NotAnotherSMAOffsetStrategyHO",
+  "initial": 1000,
+  "final": 157693.09040385007,
+  "stake_amount": "unlimited",
+  "max_open_trades": 3,
+  "warnings": [
+    "Candle history ends early for final positions in POND/USDT. Freqtrade settles them at their last available candle. Native wallet valuation can omit unpriced holdings; daily risk metrics require caution."
+  ],
+  "start": "2024-01-01 16:40:00",
+  "end": "2026-10-02 03:00:00",
+  "exchange": "binance",
+  "market": "spot",
+  "profit": 156.69309040385002,
+  "profit_abs": 156693.09040385002,
+  "trades": 3470,
+  "winrate": 0.7002881844380403,
+  "drawdown": 0.4739485912463506,
+  "sharpe": 3.3960321081621454,
+  "sortino": 2.3963358170947022,
+  "profit_factor": 1.2608977071368896,
+  "html_ready": true,
+  "benchmark": "BTC price (no fees)",
+  "basis": "Freqtrade exported wallet plus verified final forced exits, daily UTC, 365 periods per year. Wallet equity, not a separate mark-to-market reconstruction.",
+  "monthly": [
+    {
+      "year": 2024,
+      "month": 1,
+      "value": 0.05282361853999973
+    },
+    {
+      "year": 2024,
+      "month": 2,
+      "value": 0.3744794836543843
+    },
+    {
+      "year": 2024,
+      "month": 3,
+      "value": 0.7698813508826736
+    },
+    {
+      "year": 2024,
+      "month": 4,
+      "value": 0.4117794120963254
+    },
+    {
+      "year": 2024,
+      "month": 5,
+      "value": -0.06071885589543413
+    },
+    {
+      "year": 2024,
+      "month": 6,
+      "value": 0.1414634685625762
+    },
+    {
+      "year": 2024,
+      "month": 7,
+      "value": -0.08248570649944065
+    },
+    {
+      "year": 2024,
+      "month": 8,
+      "value": 0.1680137082331501
+    },
+    {
+      "year": 2024,
+      "month": 9,
+      "value": 0.04441088452413222
+    },
+    {
+      "year": 2024,
+      "month": 10,
+      "value": -0.025025092909893076
+    },
+    {
+      "year": 2024,
+      "month": 11,
+      "value": 0.4465569497184658
+    },
+    {
+      "year": 2024,
+      "month": 12,
+      "value": 0.6344879790321438
+    },
+    {
+      "year": 2025,
+      "month": 1,
+      "value": 0.30046583876239974
+    },
+    {
+      "year": 2025,
+      "month": 2,
+      "value": 0.16950152419689957
+    },
+    {
+      "year": 2025,
+      "month": 3,
+      "value": 0.035811910308818806
+    },
+    {
+      "year": 2025,
+      "month": 4,
+      "value": -0.4159597833365667
+    },
+    {
+      "year": 2025,
+      "month": 5,
+      "value": 0.03837604948393758
+    },
+    {
+      "year": 2025,
+      "month": 6,
+      "value": 0.03202241106611492
+    },
+    {
+      "year": 2025,
+      "month": 7,
+      "value": 0.27849547704067534
+    },
+    {
+      "year": 2025,
+      "month": 8,
+      "value": 0.05191082821766968
+    },
+    {
+      "year": 2025,
+      "month": 9,
+      "value": 0.17197221802417517
+    },
+    {
+      "year": 2025,
+      "month": 10,
+      "value": 0.3094923727856611
+    },
+    {
+      "year": 2025,
+      "month": 11,
+      "value": 0.7831376794200622
+    },
+    {
+      "year": 2025,
+      "month": 12,
+      "value": 0.05807737159247828
+    },
+    {
+      "year": 2026,
+      "month": 1,
+      "value": 0.25807799617599736
+    },
+    {
+      "year": 2026,
+      "month": 2,
+      "value": 0.18618018203504394
+    },
+    {
+      "year": 2026,
+      "month": 3,
+      "value": 0.10912095978585046
+    },
+    {
+      "year": 2026,
+      "month": 4,
+      "value": 0.1798577066561433
+    },
+    {
+      "year": 2026,
+      "month": 5,
+      "value": -0.10876839021703266
+    },
+    {
+      "year": 2026,
+      "month": 6,
+      "value": 0.25773408336385795
+    },
+    {
+      "year": 2026,
+      "month": 7,
+      "value": -0.0031646352054160998
+    },
+    {
+      "year": 2026,
+      "month": 8,
+      "value": 0.15994296781817652
+    },
+    {
+      "year": 2026,
+      "month": 9,
+      "value": 0.35504835359753284
+    },
+    {
+      "year": 2026,
+      "month": 10,
+      "value": 0.19723205769841323
+    }
+  ],
+  "yearly": [
+    {
+      "year": 2024,
+      "value": 9.002426582099977
+    },
+    {
+      "year": 2025,
+      "value": 2.839440135781247
+    },
+    {
+      "year": 2026,
+      "value": 3.106193314351925
+    }
+  ],
+  "requested_pairs": 147,
+  "dataset_pairs": 147,
+  "processed_pairs": 147,
+  "skipped_pairs": [],
+  "provenance": {
+    "campaign": "1fdbb07d09d849888cfe71b1512a8965",
+    "dataset_repository": "https://github.com/iterativv/NostalgiaForInfinityData",
+    "dataset_revision": "0e7e78c85e3815584a2accc5528fe9161e45e433",
+    "strategy_source": {
+      "url": "https://raw.githubusercontent.com/davidzr/freqtrade-strategies/9623c1f3d8c7f60c8b411010fa26377e6ca99ab9/strategies/NotAnotherSMAOffsetStrategyHO/NotAnotherSMAOffsetStrategyHO.py",
+      "revision": "9623c1f3d8c7f60c8b411010fa26377e6ca99ab9",
+      "sha256": "9a616cb503c7f4649dd721946b62d8bfb8985b9bd2154932d0a36fc243383032"
+    },
+    "source_archive_sha256": "a9dcce1123d9d3c51942c6ac3a6d135ff0df872c1f84f4f16bba3fb81191d387",
+    "app_release": "1.00",
+    "freqtrade_version": "2026.8",
+    "quantstats_version": "0.0.81",
+    "requested_pairs": null,
+    "timeframe": "5m",
+    "timestamp_timezone": "UTC"
+  }
+}

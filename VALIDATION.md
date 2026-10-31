@@ -2,6 +2,16 @@
 
 Release **1.00**, validated on 2026-10-29 UTC. All six full-history campaigns and final browser checks completed.
 
+## Follow-up: native UI, Telegram and published results
+
+Validated on 2026-10-30. The original 1.00 tag remains unchanged; these improvements are subsequent commits on main.
+
+- Full FreqUI restores the upstream navbar, bot controls, refresh, themes, layouts and mobile footer. The chosen view persists; a top bar connects the research/trading engines and returns to guided workflows or QuantStats. Guided CSS is scoped to its own workspace.
+- A browser regression check connects both native engines, verifies research navigation, opens the trading dashboard, persists the dark theme across reload, checks mobile overflow and returns to reports. It also verifies Telegram status. A discovered upstream dashboard issue is corrected in the frontend: research webservers are excluded from trading-period requests and portfolio comparison rows. Freqtrade engine code is unchanged.
+- Telegram previously advertised OpenClaw commands while the local Freqtrade engine was offline. The dedicated bot now advertises 39 commands verified against the installed native handlers. The user confirmed `/help` and `/show_config` respond from Freqtrade. Tests distinguish saved credentials from a running process with matching credentials; neither a menu nor an outbound test is described as proof of reception.
+- The six published campaigns contain 81,835 simulated trades. Exports include native result JSON compressed with gzip, complete QuantStats HTML, metrics/provenance and daily/monthly/yearly CSVs. Counts and final balances reconcile with source archives; gzip round trips and published SHA-256 checksums pass. Private settings are scanned in plaintext and decompressed exports. Original configs, candles, trading databases and strategy source remain local.
+- 19 backend tests and 56 frontend tests pass, along with TypeScript and the production build. Guided desktop/mobile/report checks and the new native UI check pass. No backtest calculation or trading rule changed; full-history campaigns were exported, not rerun. No live orders were tested.
+
 ## Environment and application
 
 - Windows, isolated Conda environment: Python 3.13.15, Freqtrade 2026.8, QuantStats 0.0.81. Freqtrade engine files are unchanged.

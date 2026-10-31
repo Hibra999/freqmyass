@@ -1,0 +1,284 @@
+{
+  "strategy": "NotAnotherSMAOffsetStrategyHO",
+  "initial": 1000,
+  "final": 26694.11284732999,
+  "stake_amount": "unlimited",
+  "max_open_trades": 3,
+  "warnings": [],
+  "start": "2024-01-01 16:40:00",
+  "end": "2026-10-02 03:00:00",
+  "exchange": "kucoin",
+  "market": "spot",
+  "profit": 25.694112847329997,
+  "profit_abs": 25694.11284733,
+  "trades": 1343,
+  "winrate": 0.7155621742367834,
+  "drawdown": 0.2701513197089213,
+  "sharpe": 2.797178234235057,
+  "sortino": 1.9509682604327852,
+  "profit_factor": 1.630704279515254,
+  "html_ready": true,
+  "benchmark": "BTC price (no fees)",
+  "basis": "Freqtrade exported wallet plus verified final forced exits, daily UTC, 365 periods per year. Wallet equity, not a separate mark-to-market reconstruction.",
+  "monthly": [
+    {
+      "year": 2024,
+      "month": 1,
+      "value": 0.20894558306
+    },
+    {
+      "year": 2024,
+      "month": 2,
+      "value": 0.19598594048400697
+    },
+    {
+      "year": 2024,
+      "month": 3,
+      "value": 0.06224582286129121
+    },
+    {
+      "year": 2024,
+      "month": 4,
+      "value": 0.019176116657491526
+    },
+    {
+      "year": 2024,
+      "month": 5,
+      "value": 0.007980045237353517
+    },
+    {
+      "year": 2024,
+      "month": 6,
+      "value": 0.05239776710360844
+    },
+    {
+      "year": 2024,
+      "month": 7,
+      "value": -0.013061022532203093
+    },
+    {
+      "year": 2024,
+      "month": 8,
+      "value": 0.06695401754792951
+    },
+    {
+      "year": 2024,
+      "month": 9,
+      "value": 0.026590335507353124
+    },
+    {
+      "year": 2024,
+      "month": 10,
+      "value": 0.22985428064551505
+    },
+    {
+      "year": 2024,
+      "month": 11,
+      "value": 0.1704534811554892
+    },
+    {
+      "year": 2024,
+      "month": 12,
+      "value": -0.05033075204980475
+    },
+    {
+      "year": 2025,
+      "month": 1,
+      "value": -0.0064940490536299356
+    },
+    {
+      "year": 2025,
+      "month": 2,
+      "value": 0.015571575423516615
+    },
+    {
+      "year": 2025,
+      "month": 3,
+      "value": -0.04419646106616826
+    },
+    {
+      "year": 2025,
+      "month": 4,
+      "value": 0.19726344493964132
+    },
+    {
+      "year": 2025,
+      "month": 5,
+      "value": 0.037091122386075925
+    },
+    {
+      "year": 2025,
+      "month": 6,
+      "value": 0.04066218119936904
+    },
+    {
+      "year": 2025,
+      "month": 7,
+      "value": 0.01458529699635025
+    },
+    {
+      "year": 2025,
+      "month": 8,
+      "value": 0.11130469819369093
+    },
+    {
+      "year": 2025,
+      "month": 9,
+      "value": 0.10652283511012994
+    },
+    {
+      "year": 2025,
+      "month": 10,
+      "value": 0.14659943744234982
+    },
+    {
+      "year": 2025,
+      "month": 11,
+      "value": 0.3159787532383709
+    },
+    {
+      "year": 2025,
+      "month": 12,
+      "value": 0.18029020870669554
+    },
+    {
+      "year": 2026,
+      "month": 1,
+      "value": 0.17174593097037127
+    },
+    {
+      "year": 2026,
+      "month": 2,
+      "value": 0.06864989805950539
+    },
+    {
+      "year": 2026,
+      "month": 3,
+      "value": -0.05596098279406647
+    },
+    {
+      "year": 2026,
+      "month": 4,
+      "value": 0.3853596393591969
+    },
+    {
+      "year": 2026,
+      "month": 5,
+      "value": 0.2131512337303163
+    },
+    {
+      "year": 2026,
+      "month": 6,
+      "value": 0.21303241332385858
+    },
+    {
+      "year": 2026,
+      "month": 7,
+      "value": 0.02249109269258076
+    },
+    {
+      "year": 2026,
+      "month": 8,
+      "value": -0.2172804035114999
+    },
+    {
+      "year": 2026,
+      "month": 9,
+      "value": 1.03113651557224
+    },
+    {
+      "year": 2026,
+      "month": 10,
+      "value": 0.0028870831199339086
+    }
+  ],
+  "yearly": [
+    {
+      "year": 2024,
+      "value": 1.4538743145300024
+    },
+    {
+      "year": 2025,
+      "value": 1.7688380687139462
+    },
+    {
+      "year": 2026,
+      "value": 2.9288515537331388
+    }
+  ],
+  "requested_pairs": 53,
+  "dataset_pairs": 64,
+  "processed_pairs": 53,
+  "skipped_pairs": [],
+  "provenance": {
+    "campaign": "68c89f456f5b4015be8958a90625d3b2",
+    "dataset_repository": "https://github.com/iterativv/NostalgiaForInfinityData",
+    "dataset_revision": "0e7e78c85e3815584a2accc5528fe9161e45e433",
+    "strategy_source": {
+      "url": "https://raw.githubusercontent.com/davidzr/freqtrade-strategies/9623c1f3d8c7f60c8b411010fa26377e6ca99ab9/strategies/NotAnotherSMAOffsetStrategyHO/NotAnotherSMAOffsetStrategyHO.py",
+      "revision": "9623c1f3d8c7f60c8b411010fa26377e6ca99ab9",
+      "sha256": "9a616cb503c7f4649dd721946b62d8bfb8985b9bd2154932d0a36fc243383032"
+    },
+    "source_archive_sha256": "fee3a60bfb0a21c43e41e3b13f845d64d85bca31662679269b6b1bec15837b9f",
+    "app_release": "1.00",
+    "freqtrade_version": "2026.8",
+    "quantstats_version": "0.0.81",
+    "requested_pairs": [
+      "AAVE/USDT",
+      "ADA/USDT",
+      "ALEPH/USDT",
+      "ALGO/USDT",
+      "ARPA/USDT",
+      "ATOM/USDT",
+      "AVA/USDT",
+      "BCH/USDT",
+      "BNB/USDT",
+      "BTC/USDT",
+      "BTT/USDT",
+      "CHR/USDT",
+      "CKB/USDT",
+      "COMP/USDT",
+      "COTI/USDT",
+      "CRO/USDT",
+      "DAG/USDT",
+      "DASH/USDT",
+      "DGB/USDT",
+      "DIA/USDT",
+      "DOT/USDT",
+      "ETC/USDT",
+      "ETH/USDT",
+      "EWT/USDT",
+      "FIL/USDT",
+      "GRT/USDT",
+      "JST/USDT",
+      "KCS/USDT",
+      "KSM/USDT",
+      "LINK/USDT",
+      "LTC/USDT",
+      "MLK/USDT",
+      "NEO/USDT",
+      "NIM/USDT",
+      "ONE/USDT",
+      "ONT/USDT",
+      "ROSE/USDT",
+      "SNX/USDT",
+      "STX/USDT",
+      "TEL/USDT",
+      "TRX/USDT",
+      "UMA/USDT",
+      "UNI/USDT",
+      "UOS/USDT",
+      "VELO/USDT",
+      "VET/USDT",
+      "WAVES/USDT",
+      "WIN/USDT",
+      "XLM/USDT",
+      "XRP/USDT",
+      "XTZ/USDT",
+      "YFI/USDT",
+      "ZEC/USDT"
+    ],
+    "timeframe": "5m",
+    "timestamp_timezone": "UTC"
+  }
+}

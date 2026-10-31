@@ -2,6 +2,7 @@
 const route = useRoute();
 const bots = useBotStore();
 const wb = useWorkbench();
+const interfaceMode = useInterfaceMode();
 const menu = ref(false);
 const links = [
   ['overview', 'Overview', 'mdi:view-dashboard-outline'],
@@ -48,6 +49,13 @@ onBeforeUnmount(() => clearInterval(poll));
         >
       </nav>
       <div class="sidebar-bottom">
+        <button
+          class="secondary-button"
+          style="margin-bottom: 18px; width: 100%"
+          @click="interfaceMode = 'native'"
+        >
+          <UIcon name="mdi:application-brackets-outline" /> Full FreqUI
+        </button>
         <span class="status-dot"></span> Powered by Freqtrade<small
           >{{ wb.status.value?.app_version || 'development' }} · Freqtrade
           {{ wb.status.value?.engine_version || 'connecting' }} · Conda</small

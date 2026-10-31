@@ -30,7 +30,7 @@ const tableItems = computed<ComparisonTableItems[]>(() => {
   };
   Object.entries(botStore.allProfit).forEach(([k, v]) => {
     const thisBotStore = botStore.botStores[k];
-    if (!thisBotStore) return;
+    if (!thisBotStore || thisBotStore.isWebserverMode) return;
 
     const allOpenTrades = botStore.allOpenTrades[k];
     if (!allOpenTrades) return;

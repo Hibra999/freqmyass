@@ -194,3 +194,58 @@ def test_default_config_is_simulated_and_preserves_strategy(monkeypatch):
     assert config['telegram']['enabled'] is False
     assert 'stoploss' not in config
     assert 'startup_candle_count' not in config
+
+
+def test_telegram_menu_uses_installed_native_handlers_and_does_not_start_trading(monkeypatch):
+    import ast
+    import asyncio
+    import inspect
+    from server import app as module
+    from server.telegram_menu import COMMANDS
+    from freqtrade.rpc import telegram
+    tree = ast.parse(inspect.getsource(telegram))
+    native = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'CommandHandler':
+            names = ast.literal_eval(node.args[0])
+            native.update([names] if isinstance(names, str) else names)
+    assert set(COMMANDS) <= native
+    calls = []
+
+    async def request(method, payload):
+        calls.append((method, payload))
+        return True
+
+    monkeypatch.setattr(module, 'telegram_request', request)
+    monkeypatch.setattr(module, 'settings', lambda: {'telegram_chat_id': '12345'})
+    result = asyncio.run(module.telegram_commands())
+    assert result == {'installed': True, 'commands': len(COMMANDS)}
+    assert [method for method, _ in calls] == ['setMyCommands', 'setMyCommands', 'setChatMenuButton']
+    assert calls[1][1]['scope'] == {'type': 'chat', 'chat_id': '12345'}
+    assert all('text' not in payload for _, payload in calls)
+
+
+def test_saved_telegram_credentials_do_not_imply_running_receiver(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from server import app as module
+    from server.catalog import write_json
+    monkeypatch.setattr(module, 'RUNTIME', tmp_path)
+    saved = {**settings(), 'telegram_token': 'test-token', 'telegram_chat_id': '12345'}
+    monkeypatch.setattr(module, 'settings', lambda: saved)
+    monkeypatch.setattr(module, 'ENGINES', {})
+    write_json(tmp_path / 'trading.json', {'telegram': {'enabled': True, 'token': 'test-token', 'chat_id': '12345'}})
+    assert module.status()['telegram_ready'] is True
+    assert module.status()['telegram_engine_running'] is False
+    module.ENGINES['trading'] = dict(process=SimpleNamespace(poll=lambda: None, pid=1),
+                                   mode='trading', strategy='NASOSv4_SMA', port=8082)
+    assert module.status()['telegram_engine_running'] is True
+    saved['telegram_token'] = 'new-token'
+    assert module.status()['telegram_engine_running'] is False
+
+
+def test_public_export_rejects_credentials_and_personal_paths():
+    from scripts.export_results import public_bytes
+    assert public_bytes('{"profit": 1}', ['private-secret']) == b'{"profit": 1}'
+    for text in ('private-secret', r'C:\Users\someone\settings.json'):
+        with pytest.raises(ValueError):
+            public_bytes(text, ['private-secret'])

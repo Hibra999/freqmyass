@@ -462,7 +462,7 @@ export const useBotStore = defineStore('ftbot-wrapper', (): BotStoreSetup => {
     const updates: Promise<TimeSummaryReturnValue>[] = [];
 
     allBotStores.value.forEach((bot) => {
-      if (bot.isBotOnline) {
+      if (bot.isBotOnline && !bot.isWebserverMode) {
         updates.push(bot.getTimeSummary(TimeSummaryOptions.daily, payload));
       }
     });
@@ -497,7 +497,7 @@ export const useBotStore = defineStore('ftbot-wrapper', (): BotStoreSetup => {
     const updates: Promise<TimeSummaryReturnValue>[] = [];
 
     allBotStores.value.forEach((bot) => {
-      if (bot.isBotOnline && bot.isSelected) {
+      if (bot.isBotOnline && bot.isSelected && !bot.isWebserverMode) {
         updates.push(bot.getTimeSummary(period, payload));
       }
     });

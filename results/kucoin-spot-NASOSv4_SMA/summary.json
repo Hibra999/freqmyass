@@ -1,0 +1,284 @@
+{
+  "strategy": "NASOSv4_SMA",
+  "initial": 1000,
+  "final": 831160.46837116,
+  "stake_amount": "unlimited",
+  "max_open_trades": 3,
+  "warnings": [],
+  "start": "2024-01-01 16:40:00",
+  "end": "2026-10-02 03:00:00",
+  "exchange": "kucoin",
+  "market": "spot",
+  "profit": 830.16046837116,
+  "profit_abs": 830160.4683711601,
+  "trades": 2990,
+  "winrate": 0.905685618729097,
+  "drawdown": 0.2385460933885452,
+  "sharpe": 4.387809689180498,
+  "sortino": 1.8926819805907769,
+  "profit_factor": 1.5308393745389643,
+  "html_ready": true,
+  "benchmark": "BTC price (no fees)",
+  "basis": "Freqtrade exported wallet plus verified final forced exits, daily UTC, 365 periods per year. Wallet equity, not a separate mark-to-market reconstruction.",
+  "monthly": [
+    {
+      "year": 2024,
+      "month": 1,
+      "value": 0.5780104843100007
+    },
+    {
+      "year": 2024,
+      "month": 2,
+      "value": 0.5372300654129614
+    },
+    {
+      "year": 2024,
+      "month": 3,
+      "value": 0.3461365233478737
+    },
+    {
+      "year": 2024,
+      "month": 4,
+      "value": -0.2025007132562402
+    },
+    {
+      "year": 2024,
+      "month": 5,
+      "value": 0.21109381320562526
+    },
+    {
+      "year": 2024,
+      "month": 6,
+      "value": 0.31852580791266405
+    },
+    {
+      "year": 2024,
+      "month": 7,
+      "value": -0.18201871680983028
+    },
+    {
+      "year": 2024,
+      "month": 8,
+      "value": 0.3754985233830779
+    },
+    {
+      "year": 2024,
+      "month": 9,
+      "value": -0.009562815346524145
+    },
+    {
+      "year": 2024,
+      "month": 10,
+      "value": 0.0432010986954765
+    },
+    {
+      "year": 2024,
+      "month": 11,
+      "value": 1.8106617415118027
+    },
+    {
+      "year": 2024,
+      "month": 12,
+      "value": -0.1923144755159354
+    },
+    {
+      "year": 2025,
+      "month": 1,
+      "value": 0.6116091331532203
+    },
+    {
+      "year": 2025,
+      "month": 2,
+      "value": -0.1445270738701402
+    },
+    {
+      "year": 2025,
+      "month": 3,
+      "value": 0.03495875918557645
+    },
+    {
+      "year": 2025,
+      "month": 4,
+      "value": 0.22947627542995508
+    },
+    {
+      "year": 2025,
+      "month": 5,
+      "value": -0.06830968799814863
+    },
+    {
+      "year": 2025,
+      "month": 6,
+      "value": -0.07305127452774962
+    },
+    {
+      "year": 2025,
+      "month": 7,
+      "value": 0.3041823331704929
+    },
+    {
+      "year": 2025,
+      "month": 8,
+      "value": 0.20305576670771708
+    },
+    {
+      "year": 2025,
+      "month": 9,
+      "value": 0.3814957954439686
+    },
+    {
+      "year": 2025,
+      "month": 10,
+      "value": 0.7394642145076706
+    },
+    {
+      "year": 2025,
+      "month": 11,
+      "value": 0.2944878029551803
+    },
+    {
+      "year": 2025,
+      "month": 12,
+      "value": 0.4440864262938673
+    },
+    {
+      "year": 2026,
+      "month": 1,
+      "value": 0.39438088429187323
+    },
+    {
+      "year": 2026,
+      "month": 2,
+      "value": -0.1517298486798574
+    },
+    {
+      "year": 2026,
+      "month": 3,
+      "value": 0.1811274538660126
+    },
+    {
+      "year": 2026,
+      "month": 4,
+      "value": 0.2361780038276049
+    },
+    {
+      "year": 2026,
+      "month": 5,
+      "value": 0.28864715973285016
+    },
+    {
+      "year": 2026,
+      "month": 6,
+      "value": 0.17128730407765502
+    },
+    {
+      "year": 2026,
+      "month": 7,
+      "value": 0.2656714149328905
+    },
+    {
+      "year": 2026,
+      "month": 8,
+      "value": 0.13702585499223274
+    },
+    {
+      "year": 2026,
+      "month": 9,
+      "value": 0.7476865275969145
+    },
+    {
+      "year": 2026,
+      "month": 10,
+      "value": 0.08177886140639523
+    }
+  ],
+  "yearly": [
+    {
+      "year": 2024,
+      "value": 9.974479581271051
+    },
+    {
+      "year": 2025,
+      "value": 9.678660136114317
+    },
+    {
+      "year": 2026,
+      "value": 6.092252346493156
+    }
+  ],
+  "requested_pairs": 53,
+  "dataset_pairs": 64,
+  "processed_pairs": 53,
+  "skipped_pairs": [],
+  "provenance": {
+    "campaign": "fc403e362d5340159309ebd8c262636b",
+    "dataset_repository": "https://github.com/iterativv/NostalgiaForInfinityData",
+    "dataset_revision": "0e7e78c85e3815584a2accc5528fe9161e45e433",
+    "strategy_source": {
+      "url": "https://raw.githubusercontent.com/remiotore/ccxt-freqtrade/44beaeb6a420cd8e9f2e4ea93e11d6cfa192ee03/strategies/NASOSv4_SMA.py",
+      "revision": "44beaeb6a420cd8e9f2e4ea93e11d6cfa192ee03",
+      "sha256": "7c5106e536c9fe176b0942123894dceb13d45d21f1e9ff99821d3cd5759499d3"
+    },
+    "source_archive_sha256": "b3f4406488e97b2d09ad44793c948b260b6fee7afcef94a25fa0ce4b2e60367e",
+    "app_release": "1.00",
+    "freqtrade_version": "2026.8",
+    "quantstats_version": "0.0.81",
+    "requested_pairs": [
+      "AAVE/USDT",
+      "ADA/USDT",
+      "ALEPH/USDT",
+      "ALGO/USDT",
+      "ARPA/USDT",
+      "ATOM/USDT",
+      "AVA/USDT",
+      "BCH/USDT",
+      "BNB/USDT",
+      "BTC/USDT",
+      "BTT/USDT",
+      "CHR/USDT",
+      "CKB/USDT",
+      "COMP/USDT",
+      "COTI/USDT",
+      "CRO/USDT",
+      "DAG/USDT",
+      "DASH/USDT",
+      "DGB/USDT",
+      "DIA/USDT",
+      "DOT/USDT",
+      "ETC/USDT",
+      "ETH/USDT",
+      "EWT/USDT",
+      "FIL/USDT",
+      "GRT/USDT",
+      "JST/USDT",
+      "KCS/USDT",
+      "KSM/USDT",
+      "LINK/USDT",
+      "LTC/USDT",
+      "MLK/USDT",
+      "NEO/USDT",
+      "NIM/USDT",
+      "ONE/USDT",
+      "ONT/USDT",
+      "ROSE/USDT",
+      "SNX/USDT",
+      "STX/USDT",
+      "TEL/USDT",
+      "TRX/USDT",
+      "UMA/USDT",
+      "UNI/USDT",
+      "UOS/USDT",
+      "VELO/USDT",
+      "VET/USDT",
+      "WAVES/USDT",
+      "WIN/USDT",
+      "XLM/USDT",
+      "XRP/USDT",
+      "XTZ/USDT",
+      "YFI/USDT",
+      "ZEC/USDT"
+    ],
+    "timeframe": "5m",
+    "timestamp_timezone": "UTC"
+  }
+}

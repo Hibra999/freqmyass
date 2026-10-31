@@ -1,4 +1,5 @@
-.workspace {
+@scope (.workspace) {
+:scope {
   display: flex;
   min-height: 100dvh;
   background: #f5f7f8;
@@ -920,4 +921,5 @@ summary:focus-visible {
   .topbar-actions {
     gap: 10px;
   }
+}
 }

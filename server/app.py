@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from server.catalog import ROOT, RUNTIME, DATA, STRATEGIES, STRATEGY_INFO, USER_DATA, RESULTS, initialize, settings, read_json, write_json, make_config, strategy, available_pairs
 from server import jobs, reports
+from server.telegram_menu import COMMANDS
 
 initialize()
 SESSION = secrets.token_urlsafe(40)
@@ -146,10 +147,12 @@ def engine_state():
 @app.get('/workbench/status')
 def status():
     s = settings()
+    engines = engine_state()
+    telegram = read_json(RUNTIME / 'trading.json', {}).get('telegram', {})
     version_file = ROOT / 'VERSION'
     return dict(app_version=version_file.read_text(encoding='utf-8').strip() if version_file.exists() else 'development',
                 engine_version=importlib.metadata.version('freqtrade'),
-                quantstats_version=importlib.metadata.version('quantstats'), engines=engine_state(),
+                quantstats_version=importlib.metadata.version('quantstats'), engines=engines,
                 strategies=[{**item, 'installed': (STRATEGIES / f"{item['name']}.py").exists()}
                             for item in STRATEGY_INFO],
                 data_ready=bool(available_pairs('binance', 'spot')),
@@ -157,6 +160,9 @@ def status():
                           for e, m in [('binance', 'spot'), ('binance', 'futures'), ('kucoin', 'spot')]],
                 capital=s['capital'], max_open_trades=s['max_open_trades'],
                 telegram_ready=bool(s['telegram_token'] and s['telegram_chat_id']),
+                telegram_engine_running=bool(engines.get('trading', {}).get('running')
+                    and telegram.get('enabled') and telegram.get('token') == s['telegram_token']
+                    and str(telegram.get('chat_id')) == str(s['telegram_chat_id'])),
                 exchange_ready=bool(s['exchange_key'] and s['exchange_secret']),
                 credential_exchange=s.get('credential_exchange', 'binance'),
                 jobs=jobs.list_jobs(), reports=reports.summaries())
@@ -332,20 +338,37 @@ async def close_trading():
     return {'closed': True}
 
 
-@app.post('/workbench/telegram/test')
-async def telegram_test():
+async def telegram_request(method, payload):
     s = settings()
     if not s['telegram_token'] or not s['telegram_chat_id']:
         raise HTTPException(422, 'Save your Telegram token and chat ID first.')
     try:
         async with httpx.AsyncClient(timeout=20) as client:
-            response = await client.post(f"https://api.telegram.org/bot{s['telegram_token']}/sendMessage",
-                json={'chat_id': s['telegram_chat_id'], 'text': 'FreqMyAss connection test. Freqtrade native Telegram commands become available when the trading bot is running. No live trading was enabled.'})
+            response = await client.post(f"https://api.telegram.org/bot{s['telegram_token']}/{method}", json=payload)
         if not response.is_success or not response.json().get('ok'):
             raise ValueError(response.json().get('description', 'Telegram rejected the request.'))
     except Exception as exc:
         raise HTTPException(502, jobs.redact(str(exc)))
+    return response.json().get('result')
+
+
+@app.post('/workbench/telegram/test')
+async def telegram_test():
+    await telegram_request('sendMessage', {'chat_id': settings()['telegram_chat_id'],
+        'text': 'FreqMyAss outbound connection test. This confirms sending only. Keep the Freqtrade trading engine open, then send /help or /show_config here to verify native commands. No trading was started by this test.'})
     return {'sent': True}
+
+
+@app.post('/workbench/telegram/commands')
+async def telegram_commands():
+    commands = [{'command': name, 'description': description} for name, description in COMMANDS.items()]
+    chat_id = settings()['telegram_chat_id']
+    # A chat-specific menu also takes precedence over an older default menu.
+    for scope in ({'type': 'default'}, {'type': 'chat', 'chat_id': chat_id}):
+        await telegram_request('setMyCommands', {'commands': commands, 'scope': scope})
+    if str(chat_id).isdigit():
+        await telegram_request('setChatMenuButton', {'chat_id': chat_id, 'menu_button': {'type': 'commands'}})
+    return {'installed': True, 'commands': len(commands)}
 
 
 @app.get('/workbench/reports/{report_id}')

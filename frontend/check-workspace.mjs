@@ -7,6 +7,7 @@ page.on('pageerror', e => errors.push(e.message));
 await page.goto('http://127.0.0.1:8765/');
 await page.getByText('A clearer view of your trading.').waitFor();
 await page.getByText('539', { exact: false }).first().waitFor();
+assert.equal(await page.locator('.workspace').evaluate((el) => getComputedStyle(el).textAlign), 'left');
 await page.screenshot({path: '../.runtime/overview.png', fullPage: true});
 for (const [view, heading] of [['strategies', 'Find your next edge.'], ['backtesting', 'Test an idea. See the whole picture.'], ['reports', 'Understand every result.'], ['data', 'Your entire market library.'], ['setup', 'Make this workspace yours.']]) {
   await page.goto(`http://127.0.0.1:8765/?view=${view}`);

@@ -1,6 +1,6 @@
 # Third-party components
 
-- [FreqUI](https://github.com/freqtrade/frequi): GPL-3.0. The frontend retains its API clients, stores, engine controls and advanced analysis components. The application shell, guided workspace, research queue and QuantStats integration are new. Original license: `frontend/LICENSE`.
+- [FreqUI](https://github.com/freqtrade/frequi): GPL-3.0. The frontend retains its API clients, stores, engine controls and advanced analysis components. Full FreqUI uses the original navbar, themes, customizable layouts and mobile footer. The application shell, guided workspace, research queue and QuantStats integration are new. Frontend portfolio requests exclude research webservers. Original license: `frontend/LICENSE`.
 - [Freqtrade](https://github.com/freqtrade/freqtrade): GPL-3.0. Installed as a pinned dependency; its engine source is not modified.
 - [QuantStats](https://github.com/ranaroussi/quantstats): Apache-2.0. Installed as a dependency.
 - [NostalgiaForInfinityData](https://github.com/iterativv/NostalgiaForInfinityData): GPL-3.0. Downloaded locally as a complete shallow snapshot; not redistributed in this repository.

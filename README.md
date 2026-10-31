@@ -27,17 +27,20 @@ Advanced configuration also offers fixed USDT per entry. This can be necessary f
 - Hyperopt jobs through the official CLI. Parameter export is disabled to avoid silently changing the original strategy settings.
 - QuantStats HTML reports, daily wallet curves, monthly and yearly compounded returns, trade tables and downloadable engine archives. Saved native backtest archives can also be selected under Reports.
 - Native Freqtrade Telegram. Configure credentials in Settings and test the connection; commands are owned by the running Freqtrade trading process.
+- **Full FreqUI** in the sidebar restores the original navigation, theme selector, bot selector, refresh controls, customizable layouts, mobile navigation and all retained native pages. Switch between research and trading engines in its top bar; return to the guided workspace or QuantStats reports at any time. The view preference is saved in this browser.
 - Multiple external engine connections through Settings. FreqAI requires a compatible strategy and its model dependencies; the four supplied strategies do not implement FreqAI features.
 
 Complete 326-contract futures campaigns used approximately 51 GiB of RAM on the validation machine. The workbench serializes its research queue and Hyperopt defaults to one worker. Native tools and external engines run independently; avoid launching another large campaign alongside one already running.
 
 ## Data, money and credentials
 
-All mutable state is under `.runtime/`, excluded from Git: credentials, the Conda environment, original strategies, market data, job logs, engine configurations, trading databases and reports. Never publish this directory. The Git repository contains the application and reproducible source references, not the dataset or credentials.
+All mutable state is under `.runtime/`, excluded from Git: credentials, the Conda environment, original strategies, market data, job logs, engine configurations, trading databases and reports. Never publish this directory. The Git repository contains the application, reproducible source references and [six published backtest campaigns](results/README.md), without the dataset or credentials. Published exports include full QuantStats HTML, native simulated trade/order results and monthly/yearly CSVs.
 
 The application listens on loopback. Local workbench requests require an HTTP-only SameSite session cookie, and writes require a request protection header. The engine uses its own authenticated REST API on ports 8081 (research) and 8082 (trading). Do not expose these ports directly to the internet.
 
 Trading starts in simulation and in the stopped state. Live activation requires credentials plus the explicit `ENABLE LIVE TRADING` phrase. Starting a process does not start entries; use the native Start control. Use exchange keys without withdrawal permission. One native Telegram bot token must belong to one running trading process.
+
+In **Settings → Native Telegram**, save credentials, then use **Install Freqtrade command menu** for a bot dedicated to this application. This replaces any previous menu, such as OpenClaw's, without altering Freqtrade handlers. Keep the trading engine open to receive commands; it can remain stopped. Reopen the Telegram chat and send `/help` or `/show_config` to verify reception. `/start` starts trading in the active mode. A successful **Test outgoing message** only proves that sending works. Saved credentials and the running engine are displayed separately; credential changes require closing and reopening the engine. The shutdown control refuses to close an engine with open trades.
 
 Reports use Freqtrade's exported wallet, sampled daily in UTC with 365 periods per year. Final forced exits are reconciled from their exported net PnL; spot reconciliation also accounts for the marked coins and fees before liquidation. The final balance must match the engine. Wallet equity is not an independently reconstructed mark-to-market series. Native Freqtrade drawdown and Sharpe metrics are labeled separately from QuantStats. The BTC price benchmark uses 5m candles truncated at the backtest end, with no assumed future prices or trading fees.
 
@@ -56,6 +59,7 @@ pnpm typecheck
 pnpm build
 node check-workspace.mjs
 node check-engines.mjs
+node check-native-ui.mjs
 node check-local-actions.mjs
 ```
 
